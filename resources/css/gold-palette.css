@@ -1,0 +1,445 @@
+/* =========================================================
+   GOLD PALETTE OVERRIDE
+   ------------------------------------------------------------
+   Replaces the washed-out warm cream / ivory surfaces with a
+   richer antique-gold scheme, and lifts the veil over the hero
+   image so the red gown reads as red instead of muddy brown.
+
+   Placed last in the file so it wins on source order without
+   needing !important over the earlier component rules.
+   ========================================================= */
+
+:root {
+    /* --- surfaces: warm antique gold, not grey-cream --- */
+    --paper: #f4e9d4;
+    --gold: #a8813a;
+    --gold-soft: #c9a961;
+    --gold-deep: #7d5f24;
+    --cream: #f9f0de;
+
+    /* --- text / contrast --- */
+    --ink: #3a2c1a;
+    --muted: #6f5c40;
+    --burgundy: #6d1935;
+    --burgundy-deep: #4e1126;
+}
+
+/* ---------- app shell ---------- */
+
+body,
+.sb-app-shell {
+    background: #f4e9d4;
+    color: #3a2c1a;
+}
+
+.sb-page {
+    background:
+        radial-gradient(ellipse at 93% 0%, #e8d6ae 0, transparent 30%),
+        radial-gradient(ellipse at 5% 8%, #f7eeda 0, transparent 26%), #f4e9d4;
+}
+
+/* ---------- panels & cards: keep them light so text stays legible ---------- */
+
+.sb-panel,
+.sb-stat,
+.sb-product,
+.sb-payment-transactions {
+    background: #fdf8ec;
+    border-color: #d9c397;
+    box-shadow:
+        0 6px 20px rgba(94, 66, 22, 0.09),
+        inset 0 1px 0 rgba(255, 253, 245, 0.9);
+}
+
+.sb-stat i {
+    background: linear-gradient(140deg, #c9a961, #a8813a);
+    color: #fffaf0;
+}
+
+.sb-stat-gold i {
+    background: linear-gradient(140deg, #8b2f48, #6d1935);
+    color: #fbe9d0;
+}
+
+/* ---------- typography ---------- */
+
+.sb-heading h1,
+.sb-customer-hero h1,
+.sb-auth-intro h1,
+.sb-home-hero h1 {
+    color: #4e1126;
+}
+
+.sb-heading h1 em,
+.sb-customer-hero h1 em,
+.sb-home-hero h1 em,
+.sb-experience-copy h2 em,
+.sb-home-about h2 em,
+.sb-home-cta h2 em,
+.sb-home-section-head h2 em {
+    color: #a8813a;
+}
+
+.sb-heading p,
+.sb-customer-hero p {
+    color: #6f5c40;
+}
+
+.sb-kicker {
+    color: #a8813a;
+}
+
+.sb-kicker::before {
+    background: #a8813a;
+}
+
+/* ---------- primary actions stay burgundy ---------- */
+
+.sb-btn,
+.sb-auth-submit,
+.sb-home-signup,
+.sb-reserve-banner,
+.sb-home-cta {
+    background: linear-gradient(180deg, #7d1c39, #5e1229) !important;
+    color: #fff;
+}
+
+.sb-btn:hover,
+.sb-auth-submit:hover,
+.sb-home-signup:hover {
+    background: linear-gradient(180deg, #5e1229, #4a0e21) !important;
+}
+
+.sb-outline-btn {
+    background: #fdf8ec;
+    color: #6d1935;
+    border-color: #d9c397;
+}
+
+.sb-outline-btn:hover {
+    background: #f6ecd8;
+    border-color: #c9a961;
+}
+
+/* ---------- tables: warm gold header instead of grey ---------- */
+
+.sb-table th,
+.sb-payment-table th {
+    background: linear-gradient(180deg, #efe0c1, #e6d3ab);
+    color: #6d5730;
+}
+
+.sb-table td {
+    border-color: #ecdfc6;
+    color: #4a3c26;
+}
+
+/* ---------- sidebar: cream panel with gold accents ---------- */
+
+.sb-sidebar {
+    background: linear-gradient(180deg, #f7edd8, #efe1c2);
+    color: #3a2c1a;
+    border-right: 1px solid #d9c397;
+    box-shadow: 5px 0 26px rgba(94, 66, 22, 0.1);
+}
+
+.sb-sidebar::-webkit-scrollbar-track {
+    background: #f7edd8;
+}
+
+.sb-sidebar::-webkit-scrollbar-thumb {
+    background: #c9a961;
+}
+
+.sb-sidebar-brand {
+    border-bottom: 1px solid #d9c397;
+}
+
+.sb-sidebar .sb-brand {
+    color: #4e1126;
+}
+
+.sb-sidebar .sb-brand small {
+    color: #6f5c40;
+}
+
+.sb-sidebar-caption {
+    color: #8a6d38;
+}
+
+.sb-side-link {
+    color: #5a4a2c;
+}
+
+.sb-side-link:hover {
+    background: rgba(168, 129, 58, 0.13);
+    color: #3a2c1a;
+}
+
+.sb-side-link.is-active {
+    background: linear-gradient(90deg, #fdf8ec, #f6ecd8);
+    color: #4e1126;
+    font-weight: 700;
+    box-shadow: inset 3px 0 #a8813a;
+}
+
+.sb-inventory-chevron {
+    color: #8a6d38;
+}
+
+.sb-side-user {
+    border-top: 1px solid #d9c397;
+}
+
+.sb-side-user-copy b {
+    color: #3a2c1a;
+}
+
+.sb-side-user-copy small {
+    color: #8a6d38;
+}
+
+/* ---------- payment page gold accents ---------- */
+
+.sb-payment-stats > div {
+    background: #fdf8ec;
+    border-color: #d9c397;
+}
+
+.sb-payment-stats > div::before {
+    background: linear-gradient(180deg, #a8813a, #c9a961);
+}
+
+.sb-payment-stats > div:nth-child(2)::before {
+    background: linear-gradient(180deg, #4f8a5b, #6fae7c);
+}
+
+.sb-payment-stats > div:nth-child(3)::before {
+    background: linear-gradient(180deg, #8b2f48, #6d1935);
+}
+
+.sb-payment-stats strong,
+.sb-payment-table-amount,
+.sb-ledger-amount strong,
+.sb-payment-dialog-amount {
+    color: #6d1935;
+}
+
+.sb-payment-stats span,
+.sb-payment-transactions-head span {
+    color: #8a6d38;
+}
+
+.sb-payment-table td {
+    border-top-color: #ecdfc6;
+    color: #4a3c26;
+}
+
+.sb-payment-table tbody tr:hover {
+    background: #faf1de;
+}
+
+.sb-payment-table th {
+    background: linear-gradient(180deg, #efe0c1, #e6d3ab);
+    color: #6d5730;
+}
+
+.sb-payment-transactions-head h2 {
+    color: #4e1126;
+}
+
+.sb-payment-toolbar,
+.sb-payment-dialog {
+    color: #3a2c1a;
+}
+
+.sb-payment-filters input,
+.sb-payment-filters select,
+.sb-payment-review-form textarea,
+.sb-record-payment-dialog label input,
+.sb-record-payment-dialog label select {
+    background: #fdf8ec;
+    border-color: #d9c397;
+    color: #3a2c1a;
+}
+
+.sb-payment-filter-button {
+    background: #f2e4c4;
+    color: #6d5730;
+    border-color: #d0b681;
+}
+
+.sb-payment-filter-button:hover {
+    background: #ead9ae;
+    border-color: #c9a961;
+}
+
+.sb-payment-add-button {
+    background: linear-gradient(180deg, #7d1c39, #5e1229);
+    border-color: #5e1229;
+    box-shadow: 0 8px 20px rgba(94, 17, 38, 0.28);
+}
+
+/* ---------- welcome / marketing hero: let the red gown show ---------- */
+
+.sb-home,
+.sb-home-hero {
+    background: #f4e9d4;
+}
+
+.sb-home-hero {
+    background:
+        radial-gradient(ellipse at 2% 30%, #f9f0de, transparent 40%),
+        linear-gradient(110deg, #f4e9d4, #ecdcbb);
+}
+
+.sb-home-hero h1 {
+    color: #4e1126;
+}
+
+.sb-home-hero-copy > p {
+    color: #6f5c40;
+}
+
+.sb-home-experience {
+    background: linear-gradient(180deg, #ecdcbb, #e6d2ab);
+}
+
+.sb-experience-steps i {
+    color: #a8813a;
+}
+
+.sb-home-about,
+.sb-home-trust {
+    background: #fdf8ec;
+}
+
+.sb-about-flower {
+    color: #c9a961;
+}
+
+.sb-home-footer {
+    background: #f4e9d4;
+}
+
+/* ---------- auth screens ---------- */
+
+.sb-auth-shell {
+    background:
+        radial-gradient(ellipse at 12% 20%, #f7ecd6, transparent 37%),
+        radial-gradient(ellipse at 90% 90%, #efe0c4, transparent 34%), #f4e9d4;
+}
+
+.sb-auth-card {
+    background: #fdf8ec;
+    border-color: #d9c397;
+}
+
+.sb-auth-roles i {
+    background: #f4e9d4;
+    color: #6d1935;
+}
+
+.sb-auth-roles > span {
+    color: #8a6d38;
+}
+
+.sb-auth-register a,
+.sb-pass-label a {
+    color: #6d1935;
+}
+
+/* ---------- status pills: keep semantic colours, warm them slightly ---------- */
+
+.sb-payment-status.is-pending,
+.sb-status-pending {
+    background: #f7e8c4;
+    color: #8a6520;
+}
+
+.sb-payment-status.is-verified,
+.sb-status-verified {
+    background: #e2efe4;
+    color: #3f7a4a;
+}
+
+.sb-payment-status.is-rejected,
+.sb-status-rejected {
+    background: #f8e0e3;
+    color: #a3323f;
+}
+
+/* ---------- misc surfaces ---------- */
+
+.sb-tip {
+    background: linear-gradient(180deg, #f7ecd6, #f2e4c4);
+    color: #6d5730;
+}
+
+.sb-tip b {
+    color: #4e1126;
+}
+
+.sb-detail-photo {
+    background: linear-gradient(145deg, #f0e3c6, #e6d2ab);
+}
+
+.sb-customer-hero {
+    background: linear-gradient(110deg, #f4e9d4, #ecdcbb);
+}
+
+.sb-settings-card,
+.sb-recent-booking,
+.sb-pagination .page-link,
+.sb-pagination .page-item > span {
+    background: #fdf8ec;
+    border-color: #d9c397;
+}
+
+.sb-worktop {
+    background: #fbf4e3f2;
+    border-bottom: 1px solid #d9c397;
+}
+
+.sb-worktop-context b {
+    color: #4e1126;
+}
+
+.sb-worktop-context .sb-kicker {
+    color: #8a6d38;
+}
+
+.sb-worktop-name {
+    color: #4a3c26;
+}
+
+.sb-form-errors {
+    background: #fbe9ec;
+    border-color: #f0cdd3;
+    color: #9c3140;
+}
+
+.sb-success {
+    background: #e8f3e9;
+    border-color: #cfe4d2;
+    color: #356440;
+}
+
+/* ---------- mobile sidebar: base rule uses a flat cream, re-gold it ---------- */
+
+@media (max-width: 700px) {
+    .sb-sidebar {
+        background: linear-gradient(180deg, #f7edd8, #efe1c2);
+        color: #3a2c1a;
+    }
+}
+/* =========================================================
+   WELCOME NAV LOGO FIT
+   The header on the welcome page is 78px tall, but .sb-logo-lockup
+   renders at 76px, which overflowed and clipped the wordmark.
+   Cap it so the full logo sits inside the bar.
+   ========================================================= */
+
+.sb-home-nav .sb-logo-lockup {
+    height: 52px;
+}

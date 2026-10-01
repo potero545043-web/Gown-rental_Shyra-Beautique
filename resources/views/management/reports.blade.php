@@ -29,8 +29,8 @@
                         </select>
                         <div class="sb-report-custom-range" x-show="period === 'custom'">
                             <label for="report-start-date">From</label>
-                            <input id="report-start-date" type="date" name="start_date" value="{{ $period['start_date'] }}"
-                                x-bind:required="period === 'custom'">
+                            <input id="report-start-date" type="date" name="start_date"
+                                value="{{ $period['start_date'] }}" x-bind:required="period === 'custom'">
                             <label for="report-end-date">To</label>
                             <input id="report-end-date" type="date" name="end_date" value="{{ $period['end_date'] }}"
                                 x-bind:required="period === 'custom'">
@@ -38,8 +38,9 @@
                         <button class="sb-report-filter-button" type="submit">Apply</button>
                     </form>
                     <div class="sb-report-actions">
-                    <a class="sb-report-export-link" href="{{ route('owner.reports.export', ['period' => $period['key'], 'start_date' => $period['start_date'], 'end_date' => $period['end_date']]) }}">Download CSV</a>
-                    <button class="sb-report-export-button" type="button" onclick="window.print()">Print / Save PDF</button>
+                        <a class="sb-report-export-link"
+                            href="{{ route('owner.reports.pdf', request()->only(['period', 'start_date', 'end_date'])) }}">Download
+                            PDF</a>
                     </div>
                 </div>
 
@@ -242,8 +243,10 @@
                                     {{ $gown->category->name ?? 'Collection' }}
                                 </small>
 
-                                <div class="sb-rank-bar-track" aria-label="{{ $gown->reservation_items_count }} reservations">
-                                    <span style="width: {{ max(6, ($gown->reservation_items_count / max($popularMax, 1)) * 100) }}%;"></span>
+                                <div class="sb-rank-bar-track"
+                                    aria-label="{{ $gown->reservation_items_count }} reservations">
+                                    <span
+                                        style="width: {{ max(6, ($gown->reservation_items_count / max($popularMax, 1)) * 100) }}%;"></span>
                                 </div>
 
                             </div>
@@ -345,7 +348,7 @@
             background: #fffdf9;
         }
 
-        .sb-report-period > label,
+        .sb-report-period>label,
         .sb-report-custom-range label {
             color: #806b61;
             font: 600 11px 'DM Sans', sans-serif;
@@ -870,18 +873,48 @@
         }
 
         @media print {
-            @page { size: A4 landscape; margin: 12mm; }
+            @page {
+                size: A4 landscape;
+                margin: 12mm;
+            }
+
             .sb-sidebar,
             .sb-sidebar-brand,
-            .sb-report-toolbar { display: none !important; }
+            .sb-report-toolbar {
+                display: none !important;
+            }
+
             .sb-main-column,
-            .sb-main-content { width: 100% !important; margin: 0 !important; padding: 0 !important; }
-            .sb-page { min-height: auto; background: #fff !important; }
-            .sb-wrap { max-width: none; padding: 0; }
-            .sb-report-grid { grid-template-columns: 1.6fr 1fr; }
+            .sb-main-content {
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .sb-page {
+                min-height: auto;
+                background: #fff !important;
+            }
+
+            .sb-wrap {
+                max-width: none;
+                padding: 0;
+            }
+
+            .sb-report-grid {
+                grid-template-columns: 1.6fr 1fr;
+            }
+
             .sb-report-panel,
-            .sb-report-stat { box-shadow: none; break-inside: avoid; }
-            .sb-chart-bar { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .sb-report-stat {
+                box-shadow: none;
+                break-inside: avoid;
+            }
+
+            .sb-chart-bar {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
         }
     </style>
 

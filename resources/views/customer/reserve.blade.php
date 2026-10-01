@@ -8,7 +8,14 @@
                 </div><a class="sb-outline-btn" href="{{ route('customer.catalog') }}">Back to collection</a>
             </div>
             @if($errors->any())
-            <div class="sb-form-errors">{{ $errors->first() }}</div>@endif
+                <div class="sb-form-errors" role="alert">
+                    @if($errors->has('reservation'))
+                        {{ $errors->first('reservation') }}
+                    @else
+                        Please correct this reservation issue: {{ $errors->first() }}
+                    @endif
+                </div>
+            @endif
             @if($lateFeePerDay <= 0)
                 <div class="sb-form-errors">The shop needs to configure its daily late fee before accepting reservations.
             </div>@endif
@@ -28,18 +35,18 @@
                             <div><span>Daily late fee</span><b>₱{{ number_format($lateFeePerDay, 2) }}</b></div>
                             <div><span>Max rental</span><b>{{ $maxRentalDays }} days</b></div>
                         </div>
-                        <div class="sb-reserve-summary-total"><span>Amount due
-                                today</span><b>₱{{ number_format((float) $gown->rental_price + $securityDeposit, 2) }}</b>
+                        <div class="sb-reserve-summary-total"><span>Rental
+                                fee</span><b>₱{{ number_format((float) $gown->rental_price, 2) }}</b>
                         </div>
-                        <div class="sb-reserve-summary-note">The security deposit is held as collateral, not as rental
-                            income. After return and inspection it is refunded, partially deducted for charges, or fully
-                            deducted if the replacement value exceeds it.</div>
+                        <div class="sb-reserve-summary-note">Bring one valid government-issued ID at pickup. Staff will
+                            keep it securely as a record and return it after the gown is returned.</div>
                     </div>
                 </aside>
 
                 <div class="sb-reserve-main">
                     <form method="POST" action="{{ route('customer.reserve.store', $gown) }}"
                         enctype="multipart/form-data" class="sb-reservation-form" data-reservation-wizard>@csrf
+                        <div class="sb-form-errors" data-step-error role="alert" hidden></div>
 
                         <div class="sb-progress-head">
                             <div class="sb-progress-meta">
@@ -67,15 +74,10 @@
                                 <h2>Customer &amp; dates</h2>
                                 <label>Booked by<input value="{{ auth()->user()->name }} · {{ auth()->user()->email }}"
                                         disabled></label>
-                                <label>Contact number<input name="contact_number" required
-                                        value="{{ old('contact_number') }}"
-                                        placeholder="09XX XXX XXXX">@error('contact_number')<small>{{ $message }}</small>@enderror</label>
-                                <label>Occasion<select name="event_type" required>
-                                        <option value="">Choose your occasion</option>
-                                        @foreach(['Wedding', 'Prom', 'Gala', 'Debut', 'Other special event'] as $occasion)
-                                            <option @selected(old('event_type') === $occasion)>{{ $occasion }}</option>
-                                        @endforeach
-                                    </select>@error('event_type')<small>{{ $message }}</small>@enderror</label>
+                                <label>Contact number<input type="tel" name="contact_number" required
+                                        value="{{ old('contact_number') }}" inputmode="tel" autocomplete="tel"
+                                        pattern="09[0-9]{9}" maxlength="11" title="Format: 09XXXXXXXXX (11 digits)."
+                                        placeholder="Format: 09XXXXXXXXX">@error('contact_number')<small>{{ $message }}</small>@enderror</label>
                                 <div class="sb-form-row">
                                     <label>Pickup date<input type="date" name="pickup_date" required
                                             min="{{ today()->format('Y-m-d') }}" value="{{ old('pickup_date') }}"
@@ -84,10 +86,6 @@
                                             min="{{ today()->format('Y-m-d') }}" value="{{ old('return_date') }}"
                                             data-return>@error('return_date')<small>{{ $message }}</small>@enderror</label>
                                 </div>
-                                <label>Event date<input type="date" name="event_date"
-                                        min="{{ today()->format('Y-m-d') }}" value="{{ old('event_date') }}"
-                                        data-event-date>@error('event_date')<small>{{ $message }}</small>@enderror</label>
-
                                 <div class="sb-availability" data-availability data-state="idle" aria-live="polite">
                                     <span class="sb-availability-icon" data-availability-icon>…</span>
                                     <div><b data-availability-title>Checking availability</b>
@@ -96,9 +94,9 @@
                                     </div>
                                 </div>
 
-                                <p class="sb-form-intro">Rental is up to {{ $maxRentalDays }} days from pickup, then the
-                                    gown is held for {{ $cleaningDays }} more days of professional cleaning. Late
-                                    returns accrue ₱{{ number_format($lateFeePerDay, 2) }} per day.</p>
+                                <p class="sb-form-intro">Rental is up to {{ $maxRentalDays }} days. Availability is
+                                    subject to staff approval. Late returns accrue
+                                    ₱{{ number_format($lateFeePerDay, 2) }} per day.</p>
                             </section>
 
                             {{-- STEP 2 · Gown & sizing --}}
@@ -107,22 +105,16 @@
                                 <div class="sb-selected-gown"><b>{{ $gown->name }}</b><small>{{ $gown->gown_code }} ·
                                         {{ $gown->size ?? 'Various sizes' }}</small><strong>₱{{ number_format($gown->rental_price, 2) }}</strong>
                                 </div>
-                                <p class="sb-form-intro">Measurements in centimeters. Enter the ones you know so our
-                                    stylists can prepare the fit in advance.</p>
+                                <p class="sb-form-intro">Optional measurements in centimeters can help staff prepare
+                                    the fit in advance.</p>
                                 <div class="sb-form-row">
-                                    <label>Bust (cm)<input name="bust" type="number" min="0" max="300" step="0.1"
-                                            value="{{ old('bust') }}" data-measure="bust"></label>
-                                    <label>Waist (cm)<input name="waist" type="number" min="0" max="300" step="0.1"
-                                            value="{{ old('waist') }}" data-measure="waist"></label>
+                                    <label>Bust (cm) (optional)<input name="bust" type="number" min="0" max="300"
+                                            step="0.1" value="{{ old('bust') }}" data-measure="bust"></label>
+                                    <label>Waist (cm) (optional)<input name="waist" type="number" min="0" max="300"
+                                            step="0.1" value="{{ old('waist') }}" data-measure="waist"></label>
                                 </div>
-                                <div class="sb-form-row">
-                                    <label>Hips (cm)<input name="hips" type="number" min="0" max="300" step="0.1"
-                                            value="{{ old('hips') }}" data-measure="hips"></label>
-                                    <label>Height (cm)<input name="height" type="number" min="0" max="250" step="0.1"
-                                            value="{{ old('height') }}" data-measure="height"></label>
-                                </div>
-                                <label>Gown length (cm)<input name="length" type="number" min="0" max="400" step="0.1"
-                                        value="{{ old('length') }}" data-measure="length"></label>
+                                <label>Hips (cm) (optional)<input name="hips" type="number" min="0" max="300" step="0.1"
+                                        value="{{ old('hips') }}" data-measure="hips"></label>
 
                                 <div class="sb-size-recommendation" data-size-rec data-state="idle">
                                     <span class="sb-availability-icon">?</span>
@@ -132,85 +124,53 @@
                                     </div>
                                 </div>
 
-                                <label>Notes for the stylist<textarea name="notes" rows="2"
+                                <label>Notes for the stylist (optional)<textarea name="notes" rows="2"
                                         placeholder="Shoes, hairstyle, or fit preferences...">{{ old('notes') }}</textarea></label>
                             </section>
 
                             {{-- STEP 3 · Agreement --}}
                             <section class="sb-flow-step"><span class="sb-kicker">STEP 3</span>
                                 <h2>Rental agreement</h2>
-                                <label>Photo of valid government ID<span class="sb-file-field" data-file-field>
-                                        <input type="file" name="government_id" accept="image/jpeg,image/png,image/webp"
-                                            required data-file-input>
-                                        <span class="sb-file-drop" data-file-drop>
-                                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                                <path
-                                                    d="M4 16.5V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2.5M12 4v11m0-11 4 4m-4-4-4 4" />
-                                            </svg>
-                                            <b>Choose a photo</b>
-                                            <small>JPEG, PNG or WebP · up to 5 MB</small>
-                                        </span>
-                                        <span class="sb-file-preview" data-file-preview hidden>
-                                            <img alt="Selected government ID preview" data-file-image>
-                                            <span class="sb-file-meta"><b data-file-name></b><small
-                                                    data-file-size></small></span>
-                                            <button type="button" class="sb-file-clear" data-file-clear
-                                                aria-label="Remove selected file">✕</button>
-                                        </span>
-                                    </span>@error('government_id')<small>{{ $message }}</small>@enderror<small>Stored
-                                        privately for verification only. The original physical ID is surrendered at
-                                        pickup.</small></label>
+                                <p class="sb-form-intro">Please review the key rental details before continuing.</p>
 
-                                <details class="sb-agreement" open>
-                                    <summary><b>Rental agreement</b><span>Version {{ $agreementVersion }}</span>
-                                    </summary>
+                                <div class="sb-agreement-key-details" aria-label="Key rental details">
+                                    <div><span>Rental period</span><b>Up to {{ $maxRentalDays }} days</b></div>
+                                    <div><span>Pickup</span><b>In person</b></div>
+                                    <div><span>ID required</span><b>Valid government-issued ID</b></div>
+                                    <div><span>Return</span><b>By agreed return date</b></div>
+                                    <div><span>Late fee</span><b>₱{{ number_format($lateFeePerDay, 2) }} per day</b>
+                                    </div>
+                                </div>
+
+                                <details class="sb-agreement">
+                                    <summary><b>View full rental terms</b><span aria-hidden="true">VIEW</span></summary>
                                     <ol>
                                         <li><b>Rental duration.</b> The gown may be rented for up to
                                             {{ $maxRentalDays }} days from the pickup date. The rental period ends at
                                             the agreed return date.
                                         </li>
-                                        <li><b>Pickup requirements.</b> The renter must appear in person to collect the
-                                            gown and surrender the original, physical, valid government ID. The ID is
-                                            stored in a secure safe at the shop.</li>
+                                        <li><b>Pickup requirement.</b> The renter must collect the gown in person and
+                                            provide one valid government-issued ID. The shop keeps the physical ID
+                                            securely as a record and returns it after the gown is returned.</li>
                                         <li><b>Return deadline.</b> The gown must be returned by the agreed return date
                                             during business hours. A late fee of ₱{{ number_format($lateFeePerDay, 2) }}
                                             accrues for every late day.</li>
-                                        <li><b>Damage fees.</b> The renter is financially responsible for the full
-                                            repair cost of any damage, stain, or alteration caused during the rental
-                                            period.</li>
-                                        <li><b>Lost gown policy.</b> If the gown is lost or damaged beyond repair, the
-                                            renter is liable for its full replacement value.</li>
-                                        <li><b>Security deposit.</b> A deposit of
-                                            ₱{{ number_format($securityDeposit, 2) }} is held for this gown. It is not
-                                            rental income. After return and inspection it is refunded, partially
-                                            deducted for charges, or fully deducted if the replacement value exceeds it.
-                                        </li>
+                                        <li><b>Condition and damage.</b> Staff inspect the gown when it is returned.
+                                            Late-return or damage charges are assessed under the rental terms and the
+                                            owner's decision.</li>
                                         <li><b>Cancellation policy.</b> Requests can be cancelled free of charge before
-                                            staff approval. Any down payment becomes non-refundable once the reservation
+                                            staff approval. A down payment becomes non-refundable once the reservation
                                             is confirmed.</li>
-                                        <li><b>Cleaning policy.</b> Do not wash, dry-clean, steam, or alter the gown.
-                                            The shop handles all professional cleaning. The gown remains unavailable for
-                                            {{ $cleaningDays }} days after return for cleaning.
-                                        </li>
+                                        <li><b>Availability.</b> The reservation request is subject to staff approval.
+                                            The system checks for conflicting dates before accepting a request.</li>
                                     </ol>
                                 </details>
 
                                 <div class="sb-agreement-checks">
                                     <label class="sb-agreement-check"><input type="checkbox" name="agreement_accepted"
                                             value="1" required @checked(old('agreement_accepted'))><span>I have read and
-                                            agree to the rental agreement and the terms above.</span></label>
+                                            agree to the rental terms and conditions.</span></label>
                                     @error('agreement_accepted')<small
-                                    class="sb-check-error">{{ $message }}</small>@enderror
-                                    <label class="sb-agreement-check"><input type="checkbox" name="agreement_penalties"
-                                            value="1" required @checked(old('agreement_penalties'))><span>I understand
-                                            the penalties for late return, damage, and loss of the gown.</span></label>
-                                    @error('agreement_penalties')<small
-                                    class="sb-check-error">{{ $message }}</small>@enderror
-                                    <label class="sb-agreement-check"><input type="checkbox" name="agreement_deposit"
-                                            value="1" required @checked(old('agreement_deposit'))><span>I understand the
-                                            payment and security deposit terms, including how deductions and refunds are
-                                            handled.</span></label>
-                                    @error('agreement_deposit')<small
                                     class="sb-check-error">{{ $message }}</small>@enderror
                                 </div>
                             </section>
@@ -223,64 +183,34 @@
                                     <div><span>Rental fee ·
                                             {{ $gown->name }}</span><b>₱{{ number_format($gown->rental_price, 2) }}</b>
                                     </div>
-                                    <div><span>Security deposit <em>(refundable
-                                                collateral)</em></span><b>₱{{ number_format($securityDeposit, 2) }}</b>
+                                    <div><span data-payment-summary-label>Full payment</span><b
+                                            data-payment-summary-amount>₱{{ number_format($gown->rental_price, 2) }}</b>
                                     </div>
-                                    <div>
-                                        <span>Total</span><b>₱{{ number_format((float) $gown->rental_price + $securityDeposit, 2) }}</b>
-                                    </div>
+                                    <div><span>Remaining balance</span><b data-payment-summary-balance>₱0.00</b></div>
                                 </div>
 
-                                <div class="sb-method-options" role="radiogroup" aria-label="Payment method">
-                                    <label class="sb-method-option"><input type="radio" name="payment_method"
-                                            value="gcash" data-method @checked(old('payment_method', 'gcash') === 'gcash')><span><b>GCash</b><small>Send via GCash, upload the
-                                                receipt</small></span></label>
-                                    <label class="sb-method-option"><input type="radio" name="payment_method"
-                                            value="bank_transfer" data-method
-                                            @checked(old('payment_method') === 'bank_transfer')><span><b>Bank
-                                                transfer</b><small>Upload the transfer
-                                                confirmation</small></span></label>
-                                    <label class="sb-method-option"><input type="radio" name="payment_method"
-                                            value="cash" data-method
-                                            @checked(old('payment_method') === 'cash')><span><b>Cash</b><small>Settle at
-                                                the counter during pickup</small></span></label>
+                                <div class="sb-method-options sb-payment-choice-options" role="radiogroup"
+                                    aria-label="Payment amount">
+                                    <label class="sb-method-option"><input type="radio" name="payment_option"
+                                            value="full" required data-payment-option @checked(old('payment_option', 'full') === 'full')><span><b>Full
+                                                payment</b><small>₱{{ number_format($gown->rental_price, 2) }}</small></span></label>
+                                    <label class="sb-method-option"><input type="radio" name="payment_option"
+                                            value="downpayment" required data-payment-option
+                                            @checked(old('payment_option') === 'downpayment')><span><b>Down
+                                                payment</b><small>More than ₱500.00</small></span></label>
                                 </div>
-                                @error('payment_method')<small class="sb-check-error">{{ $message }}</small>@enderror
+                                @error('payment_option')<small class="sb-check-error">{{ $message }}</small>@enderror
 
-                                <label>Reference number<input name="payment_reference_number"
-                                        value="{{ old('payment_reference_number') }}"
-                                        placeholder="GCash / transfer reference no."
-                                        data-reference-number>@error('payment_reference_number')<small>{{ $message }}</small>@enderror</label>
-                                <label data-proof-label>Payment proof<span class="sb-file-field" data-file-field>
-                                        <input type="file" name="payment_proof" accept="image/jpeg,image/png,image/webp"
-                                            data-file-input data-payment-proof>
-                                        <span class="sb-file-drop" data-file-drop>
-                                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                                <path
-                                                    d="M4 16.5V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2.5M12 4v11m0-11 4 4m-4-4-4 4" />
-                                            </svg>
-                                            <b>Choose a receipt</b>
-                                            <small data-file-accept>JPEG, PNG or WebP · up to 5 MB</small>
-                                        </span>
-                                        <span class="sb-file-preview" data-file-preview hidden>
-                                            <img alt="Selected payment proof preview" data-file-image>
-                                            <span class="sb-file-meta"><b data-file-name></b><small
-                                                    data-file-size></small></span>
-                                            <button type="button" class="sb-file-clear" data-file-clear
-                                                aria-label="Remove selected file">✕</button>
-                                        </span>
-                                    </span>@error('payment_proof')<small>{{ $message }}</small>@enderror<small
-                                        data-proof-hint>Upload a screenshot or receipt. Staff verify it before your
-                                        reservation is confirmed.</small></label>
-                                <label>Amount paid now (PHP)<input type="number" name="payment_amount" min="0.01"
-                                        max="{{ (float) $gown->rental_price + $securityDeposit }}" step="0.01"
-                                        value="{{ old('payment_amount', (float) $gown->rental_price + $securityDeposit) }}"
-                                        required
-                                        data-payment-amount>@error('payment_amount')<small>{{ $message }}</small>@enderror<small>Pay
-                                        the full total or a non-refundable down payment. Any down payment becomes
-                                        non-refundable once the reservation is confirmed.</small></label>
-                                <p class="sb-form-intro">Remaining balance: <b data-balance-remaining>₱0.00</b> due at
-                                    pickup.</p>
+                                <input type="hidden" name="payment_method" value="cash">
+                                <p class="sb-payment-method-note">Payment method <b>Cash</b></p>
+                                <label>Amount to pay now (PHP)<input type="number" name="payment_amount" min="0.01"
+                                        max="{{ (float) $gown->rental_price }}" step="0.01"
+                                        value="{{ old('payment_amount', (float) $gown->rental_price) }}" required
+                                        data-payment-amount>@error('payment_amount')<small>{{ $message }}</small>@enderror<small
+                                        data-payment-hint>Full payment is the rental fee. Down payments must be more
+                                        than ₱500.00 and less than the rental fee.</small></label>
+                                <p class="sb-form-intro">Remaining balance due at pickup: <b
+                                        data-balance-remaining>₱0.00</b></p>
                             </section>
 
                             {{-- STEP 5 · Confirmation --}}
@@ -289,23 +219,28 @@
                                 <p class="sb-form-intro">Check everything below. Nothing is submitted until you press
                                     the final button.</p>
                                 <div class="sb-confirm-list">
-                                    <div><span>Gown</span><b>{{ $gown->name }} · {{ $gown->gown_code }}</b></div>
-                                    <div><span>Event</span><b data-confirm="event_date">—</b></div>
-                                    <div><span>Pickup</span><b data-confirm="pickup_date">—</b></div>
-                                    <div><span>Return</span><b data-confirm="return_date">—</b></div>
-                                    <div><span>Payment method</span><b data-confirm="payment_method">—</b></div>
-                                    <div><span>Amount paid now</span><b data-confirm="payment_amount">—</b></div>
-                                    <div>
-                                        <span>Total</span><b>₱{{ number_format((float) $gown->rental_price + $securityDeposit, 2) }}</b>
-                                    </div>
-                                    <div><span>Security deposit</span><b>₱{{ number_format($securityDeposit, 2) }}
-                                            (refundable)</b></div>
-                                    <div><span>Agreement</span><b>Version {{ $agreementVersion }} · accepted on
-                                            submit</b></div>
+                                    <section class="sb-confirm-group">
+                                        <h3>Reservation</h3>
+                                        <div><span>Gown</span><b>{{ $gown->name }} · {{ $gown->gown_code }}</b></div>
+                                        <div><span>Pickup</span><b data-confirm="pickup_date">—</b></div>
+                                        <div><span>Return</span><b data-confirm="return_date">—</b></div>
+                                    </section>
+                                    <section class="sb-confirm-group">
+                                        <h3>Payment</h3>
+                                        <div><span>Payment</span><b data-confirm="payment_option">—</b></div>
+                                        <div><span>Amount to pay now</span><b data-confirm="payment_amount">—</b></div>
+                                    </section>
+                                    <section class="sb-confirm-group">
+                                        <h3>Requirements</h3>
+                                        <div><span>Pickup requirement</span><b>Bring one valid government-issued ID</b>
+                                        </div>
+                                        <div><span>Agreement</span><b>Accepted upon submission</b></div>
+                                    </section>
                                 </div>
-                                <p class="sb-confirm-status"><span class="sb-status-dot is-pending"></span> Once
-                                    submitted, your reservation is <b>Pending Approval</b> until staff verify your
-                                    agreement and payment.</p>
+                                <p class="sb-confirm-status"><span
+                                        class="sb-status-dot is-pending"></span><span><b>Pending approval after
+                                            submission</b><br>Staff will verify your agreement and payment before
+                                        confirming the reservation.</span></p>
                             </section>
 
                             <div class="sb-step-controls">
@@ -341,11 +276,19 @@
             /* ---- Step 1: live availability so the customer cannot continue on blocked dates ---- */
             const pickup = form.querySelector('[data-pickup]');
             const ret = form.querySelector('[data-return]');
-            const event = form.querySelector('[data-event-date]');
+            const contactInput = form.querySelector('[name="contact_number"]');
             const availabilityBox = form.querySelector('[data-availability]');
+            const stepError = form.querySelector('[data-step-error]');
             const maxRentalDays = @json($maxRentalDays);
             const availabilityUrl = @json(route('customer.reserve.availability', $gown));
             let datesVerified = false;
+
+            const normalizeContactNumber = () => {
+                contactInput.value = contactInput.value.replace(/\D/g, '');
+            };
+            contactInput.addEventListener('blur', normalizeContactNumber);
+            contactInput.addEventListener('input', () => contactInput.setCustomValidity(''));
+            contactInput.addEventListener('invalid', () => contactInput.setCustomValidity('Format: 09XXXXXXXXX (11 digits).'));
 
             const setAvailability = (state, title, text) => {
                 availabilityBox.dataset.state = state;
@@ -369,7 +312,7 @@
                     const result = await response.json();
                     if (result.available) {
                         datesVerified = true;
-                        setAvailability('ok', 'Available for your selected dates', result.summary + ' \u00b7 ' + result.rental_days + ' day rental \u00b7 cleaning until ' + result.cleaning_until);
+                        setAvailability('ok', 'Available for your selected dates', result.summary + ' · ' + result.rental_days + ' day rental');
                     } else {
                         setAvailability('busy', 'Not available for these dates', result.reason);
                     }
@@ -381,18 +324,15 @@
             const applyReturnWindow = () => {
                 if (!pickup.value) return;
                 const parts = pickup.value.split('-').map(Number);
-                const max = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2] + maxRentalDays)).toISOString().slice(0, 10);
+                const max = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2] + maxRentalDays - 1)).toISOString().slice(0, 10);
                 ret.min = pickup.value;
                 ret.max = max;
-                event.min = pickup.value;
-                event.max = ret.value || max;
                 if (ret.value && (ret.value < pickup.value || ret.value > max)) ret.value = '';
             };
 
             pickup.addEventListener('change', () => { applyReturnWindow(); checkAvailability(); });
             ret.addEventListener('change', () => {
                 if (pickup.value && ret.value && ret.value < pickup.value) ret.value = pickup.value;
-                event.max = ret.value || ret.max;
                 checkAvailability();
             });
             applyReturnWindow();
@@ -421,134 +361,50 @@
             form.querySelectorAll('[data-measure]').forEach(input => input.addEventListener('input', recommend));
             recommend();
 
-            /* ---- Step 4: payment method behaviour ---- */
-            const methodInputs = [...form.querySelectorAll('[data-method]')];
-            const proofInput = form.querySelector('[data-payment-proof]');
-            const proofLabel = form.querySelector('[data-proof-label]');
-            const proofHint = form.querySelector('[data-proof-hint]');
-            const referenceInput = form.querySelector('[data-reference-number]');
+            /* ---- Step 4: payment amount behaviour ---- */
             const amountInput = form.querySelector('[data-payment-amount]');
-            const total = {{ (float) $gown->rental_price + $securityDeposit }};
-
-            const currentMethod = () => (methodInputs.find(input => input.checked) || {}).value || 'gcash';
+            const paymentOptionInputs = [...form.querySelectorAll('[data-payment-option]')];
+            const total = {{ (float) $gown->rental_price }};
 
             const updateBalance = () => {
                 const paid = parseFloat(amountInput.value) || 0;
-                form.querySelector('[data-balance-remaining]').textContent = peso(Math.max(0, total - paid));
+                const balance = Math.max(0, total - paid);
+                form.querySelector('[data-balance-remaining]').textContent = peso(balance);
+                form.querySelector('[data-payment-summary-label]').textContent = paymentOptionInputs.find(input => input.checked)?.value === 'full' ? 'Full payment' : 'Down payment';
+                form.querySelector('[data-payment-summary-amount]').textContent = peso(paid);
+                form.querySelector('[data-payment-summary-balance]').textContent = peso(balance);
             };
 
-            const applyMethod = () => {
-                const method = currentMethod();
-                const isCash = method === 'cash';
-                methodInputs.forEach(input => input.closest('.sb-method-option').classList.toggle('is-selected', input.checked));
-                proofInput.required = !isCash;
-                proofLabel.hidden = isCash;
-                referenceInput.required = method === 'gcash';
-                referenceInput.disabled = isCash;
-                // Kept enabled so a token still validates: cash books a 0.01 marker that
-                // staff settle at the counter, and the real amount is never trusted.
-                amountInput.readOnly = isCash;
-                if (isCash) {
-                    amountInput.value = '0.01';
-                    proofHint.textContent = '';
-                } else {
-                    amountInput.value = Math.max(0.01, parseFloat(amountInput.value) || total);
-                    proofHint.textContent = method === 'gcash'
-                        ? 'Upload a GCash screenshot or receipt. Staff verify it before your reservation is confirmed.'
-                        : 'Upload the bank transfer confirmation. Staff verify it before your reservation is confirmed.';
-                }
+            const applyPaymentOption = () => {
+                const isFull = paymentOptionInputs.find(input => input.checked)?.value === 'full';
+                amountInput.readOnly = isFull;
+                amountInput.min = isFull ? total : 500.01;
+                if (isFull) amountInput.value = total.toFixed(2);
+                else if ((parseFloat(amountInput.value) || 0) >= total) amountInput.value = '';
                 updateBalance();
             };
 
             amountInput.addEventListener('input', updateBalance);
-            methodInputs.forEach(input => input.addEventListener('change', applyMethod));
-            applyMethod();
+            paymentOptionInputs.forEach(input => input.addEventListener('change', applyPaymentOption));
+            applyPaymentOption();
 
             /* ---- Step 5: live confirmation summary ---- */
             const confirmField = name => form.querySelector('[data-confirm="' + name + '"]');
             const refreshConfirm = () => {
-                confirmField('event_date').textContent = formatDate(event.value);
                 confirmField('pickup_date').textContent = formatDate(pickup.value);
                 confirmField('return_date').textContent = formatDate(ret.value);
-                const method = currentMethod();
-                confirmField('payment_method').textContent = method === 'bank_transfer' ? 'Bank transfer' : method.charAt(0).toUpperCase() + method.slice(1);
-                confirmField('payment_amount').textContent = method === 'cash' ? 'Settled at pickup' : peso(amountInput.value);
+                confirmField('payment_option').textContent = paymentOptionInputs.find(input => input.checked)?.value === 'full' ? 'Full payment' : 'Down payment';
+                confirmField('payment_amount').textContent = peso(amountInput.value);
             };
-            [event, pickup, ret, amountInput].forEach(input => input.addEventListener('change', refreshConfirm));
-            methodInputs.forEach(input => input.addEventListener('change', refreshConfirm));
+            [pickup, ret, amountInput].forEach(input => input.addEventListener('change', refreshConfirm));
+            paymentOptionInputs.forEach(input => input.addEventListener('change', refreshConfirm));
             refreshConfirm();
-
-            /* ---- File pickers: show the chosen image before submitting ---- */
-            const formatSize = bytes => bytes < 1024 * 1024
-                ? Math.max(1, Math.round(bytes / 1024)) + ' KB'
-                : (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-
-            [...form.querySelectorAll('[data-file-field]')].forEach(field => {
-                const input = field.querySelector('[data-file-input]');
-                const drop = field.querySelector('[data-file-drop]');
-                const preview = field.querySelector('[data-file-preview]');
-                const image = field.querySelector('[data-file-image]');
-                const nameOut = field.querySelector('[data-file-name]');
-                const sizeOut = field.querySelector('[data-file-size]');
-                const clear = field.querySelector('[data-file-clear]');
-                let objectUrl = null;
-
-                const reset = () => {
-                    if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = null; }
-                    input.value = '';
-                    image.removeAttribute('src');
-                    preview.hidden = true;
-                    drop.hidden = false;
-                    field.dataset.state = 'empty';
-                };
-
-                input.addEventListener('change', () => {
-                    const file = input.files && input.files[0];
-                    if (!file) { reset(); return; }
-                    if (!file.type.startsWith('image/')) {
-                        nameOut.textContent = 'That file is not an image';
-                        sizeOut.textContent = 'Please choose a JPEG, PNG, or WebP file.';
-                        image.removeAttribute('src');
-                        preview.hidden = false;
-                        drop.hidden = true;
-                        field.dataset.state = 'error';
-                        input.value = '';
-                        return;
-                    }
-                    if (objectUrl) URL.revokeObjectURL(objectUrl);
-                    objectUrl = URL.createObjectURL(file);
-                    image.src = objectUrl;
-                    nameOut.textContent = file.name;
-                    sizeOut.textContent = formatSize(file.size);
-                    preview.hidden = false;
-                    drop.hidden = true;
-                    field.dataset.state = 'ready';
-                });
-
-                clear.addEventListener('click', event => {
-                    // The whole field is a <label>, so the click would otherwise reopen
-                    // the picker right after clearing it.
-                    event.preventDefault();
-                    event.stopPropagation();
-                    reset();
-                });
-
-                field.addEventListener('dragover', event => { event.preventDefault(); field.dataset.state = 'ready'; });
-                field.addEventListener('dragleave', () => { field.dataset.state = input.files.length ? 'ready' : 'empty'; });
-                field.addEventListener('drop', event => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    if (event.dataTransfer.files.length) {
-                        input.files = event.dataTransfer.files;
-                        input.dispatchEvent(new Event('change'));
-                    }
-                });
-            });
 
             /* ---- Wizard shell ---- */
             const scrollTop = () => form.querySelector('.sb-progress-head').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
             const show = () => {
+                stepError.hidden = true;
                 steps.forEach((step, index) => step.hidden = index !== current);
                 dots.forEach((dot, index) => {
                     dot.classList.toggle('is-active', index === current);
@@ -568,15 +424,23 @@
             };
 
             const stepIsValid = index => {
+                if (index === 0) normalizeContactNumber();
+                const invalid = [...steps[index].querySelectorAll('input, select, textarea')]
+                    .find(input => !input.disabled && !input.checkValidity());
+                if (invalid) {
+                    stepError.textContent = 'Reservation validation (RSV-001): Complete the required fields on this step before continuing.';
+                    stepError.hidden = false;
+                    invalid.reportValidity();
+                    invalid.focus();
+                    return false;
+                }
                 if (index === 0 && !datesVerified) {
-                    setAvailability('busy', 'Confirm your dates first', 'This gown must be verified as available before you can continue.');
+                    stepError.textContent = 'Availability check (RSV-002): Wait for the date check to finish before continuing.';
+                    stepError.hidden = false;
                     if (pickup.value && ret.value) checkAvailability();
                     else pickup.focus();
                     return false;
                 }
-                const invalid = [...steps[index].querySelectorAll('input, select, textarea')]
-                    .find(input => !input.disabled && !input.checkValidity());
-                if (invalid) { invalid.reportValidity(); return false; }
                 return true;
             };
 

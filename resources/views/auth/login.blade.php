@@ -71,22 +71,13 @@
                 <!-- Logo / Brand -->
                 <div class="relative z-10">
 
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-4">
 
-                        <div
-                            class="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center bg-white/10">
-                            <span class="font-display text-2xl font-semibold">
-                                S
-                            </span>
-                        </div>
+                        <img src="{{ asset('images/Logo.png') }}" alt="Shyra Beautique" class="sb-logo-lockup">
 
-                        <div>
-                            <div class="font-display text-xl tracking-wide">
-                                Shyra Beautique
-                            </div>
-
+                        <div class="border-l border-white/25 pl-4">
                             <div class="text-[9px] tracking-[0.25em] uppercase text-white/60">
-                                Gown Reservation & Rental
+                                Gown Reservation &amp; Rental
                             </div>
                         </div>
 
@@ -122,7 +113,7 @@
 
 
                     <p class="text-white/70 leading-relaxed text-sm md:text-base">
-                        Sign in to manage your reservations, browse elegant gowns,
+                        Log in to manage your reservations, browse elegant gowns,
                         and enjoy a simple rental experience with Shyra Beautique.
                     </p>
 
@@ -160,7 +151,7 @@
                     </span>
 
                     <h2 class="font-display text-4xl text-[#2E2A26] mt-3">
-                        Sign in
+                        Log In
                     </h2>
 
                     <p class="text-sm text-[#6F6662] mt-2">
@@ -254,7 +245,7 @@
                     <!-- Submit -->
                     <button type="submit"
                         class="luxury-button w-full flex items-center justify-center gap-3 rounded-xl bg-[#5C1A2B] px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#5C1A2B]/10">
-                        <span>Sign in</span>
+                        <span>Log In</span>
                         <span class="text-lg">→</span>
                     </button>
 

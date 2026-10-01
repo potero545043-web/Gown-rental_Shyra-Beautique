@@ -1,61 +1,181 @@
 <x-app-layout>
-    <div class="sb-page"><div class="sb-wrap">
-        <div class="sb-heading">
-            <div><span class="sb-kicker">CUSTOMER ACCOUNT · {{ $customer->customer_code }}</span><h1>{{ $customer->full_name }}<em>.</em></h1><p>{{ $customer->contact_number ?: 'No phone on file' }} · {{ $customer->email ?: 'No email on file' }}</p></div>
-            <a class="sb-outline-btn" href="{{ route($base . '.customers') }}">Back to customers</a>
-        </div>
-
-        <section class="sb-panel sb-customer-detail-summary">
-            <div class="sb-panel-head"><div><h2>Account summary</h2><p>Reservation and payment overview</p></div><span class="sb-status">{{ ucfirst($customer->status) }}</span></div>
-            <div class="sb-booking-info">
-                <div><small>RESERVATIONS</small><b>{{ $customer->reservations->count() }}</b></div>
-                <div><small>VERIFIED PAID</small><b>₱{{ number_format($customer->reservations->flatMap->payments->where('status', 'verified')->sum('amount'), 2) }}</b></div>
-                <div><small>OUTSTANDING BALANCE</small><b>₱{{ number_format($customer->reservations->sum('balance'), 2) }}</b></div>
-            </div>
-        </section>
-
-        <div class="sb-section-head"><div><h2>Reservation history</h2><p>Gowns, rental dates, late returns, and account payments</p></div></div>
-        @forelse($customer->reservations as $reservation)
-            <section class="sb-panel sb-customer-reservation-card">
-                <div class="sb-panel-head"><div><span class="sb-kicker">{{ $reservation->reservation_code }}</span><h2>{{ ucfirst(str_replace('_', ' ', $reservation->status)) }}</h2></div><b>₱{{ number_format($reservation->grand_total, 2) }}</b></div>
-                <div class="sb-booking-info">
-                    <div><small>PICKUP</small><b>{{ $reservation->pickup_date?->format('M d, Y') ?? '—' }}</b></div>
-                    <div><small>RETURN DUE</small><b>{{ $reservation->return_date?->format('M d, Y') ?? '—' }}</b></div>
-                    <div><small>ACTUAL RETURN</small><b>{{ $reservation->gownReturn?->actual_return_date?->format('M d, Y') ?? 'Not returned' }}</b></div>
-                    <div><small>LATE DAYS</small><b>{{ $reservation->display_late_days }}{{ $reservation->projected_late_fee > 0 ? ' · projected ₱' . number_format($reservation->projected_late_fee, 2) . ' late fee' : '' }}</b></div>
-                    <div><small>ID COLLATERAL</small><b>{{ ucfirst(str_replace('_', ' ', $reservation->collateral_status ?? 'not received')) }}</b></div>
+    <div class="sb-page">
+        <div class="sb-wrap">
+            <div class="sb-heading">
+                <div><span class="sb-kicker">CUSTOMER ACCOUNT · {{ $customer->customer_code }}</span>
+                    <h1>{{ $customer->full_name }}<em>.</em></h1>
+                    <p>{{ $customer->contact_number ?: 'No phone on file' }} ·
+                        {{ $customer->email ?: 'No email on file' }}</p>
                 </div>
-                @if($reservation->measurements)<p class="sb-form-intro">Measurements: {{ $reservation->measurements }}</p>@endif
+                <a class="sb-outline-btn" href="{{ route($base . '.customers') }}">Back to customers</a>
+            </div>
 
-                <h3 class="sb-section-subtitle">Reserved items</h3>
-                <div class="sb-table-wrap"><table class="sb-table"><thead><tr><th>GOWN</th><th>QUANTITY</th><th>RENTAL</th><th>DEPOSIT</th></tr></thead><tbody>
-                    @forelse($reservation->items as $item)
-                        <tr><td><strong>{{ $item->gown->name ?? 'Removed gown' }}</strong><small class="sb-cell-sub">{{ $item->gown->gown_code ?? '' }}</small></td><td>{{ $item->quantity }}</td><td>₱{{ number_format($item->rental_price, 2) }}</td><td>₱{{ number_format($item->security_deposit, 2) }}</td></tr>
-                    @empty
-                        <tr><td colspan="4" class="sb-empty">No reserved items recorded.</td></tr>
-                    @endforelse
-                </tbody></table></div>
-
-                <div class="sb-customer-finance-grid">
-                    <div><h3 class="sb-section-subtitle">Payments</h3><div class="sb-table-wrap"><table class="sb-table"><thead><tr><th>DATE</th><th>TYPE / REFERENCE</th><th>METHOD</th><th>AMOUNT</th><th>STATUS</th></tr></thead><tbody>
-                        @forelse($reservation->payments as $payment)
-                            <tr><td>{{ $payment->created_at?->format('M d, Y') }}</td><td>{{ ucfirst(str_replace('_', ' ', $payment->payment_type)) }}<small class="sb-cell-sub">{{ $payment->payment_reference }}</small></td><td>{{ ucfirst($payment->payment_method) }}</td><td>₱{{ number_format($payment->amount, 2) }}</td><td>{{ ucfirst($payment->status) }}</td></tr>
-                        @empty
-                            <tr><td colspan="5" class="sb-empty">No payments recorded. Reservation is unpaid.</td></tr>
-                        @endforelse
-                    </tbody></table></div></div>
-                    <div><h3 class="sb-section-subtitle">Penalties and balance</h3><div class="sb-table-wrap"><table class="sb-table"><thead><tr><th>PENALTY</th><th>AMOUNT</th><th>STATUS</th></tr></thead><tbody>
-                        @forelse($reservation->penalties as $penalty)
-                            <tr><td>{{ ucfirst(str_replace('_', ' ', $penalty->penalty_type)) }}</td><td>₱{{ number_format($penalty->amount, 2) }}</td><td>{{ ucfirst($penalty->status) }}</td></tr>
-                        @empty
-                            <tr><td colspan="3" class="sb-empty">No penalties recorded.</td></tr>
-                        @endforelse
-                        <tr><td><strong>Outstanding balance</strong></td><td colspan="2"><strong>₱{{ number_format($reservation->balance, 2) }}</strong>{{ $reservation->balance > 0 ? ' · payment due' : ' · paid' }}</td></tr>
-                    </tbody></table></div></div>
+            <section class="sb-panel sb-customer-detail-summary">
+                <div class="sb-panel-head">
+                    <div>
+                        <h2>Account summary</h2>
+                        <p>Reservation and payment overview</p>
+                    </div><span class="sb-status">{{ ucfirst($customer->status) }}</span>
+                </div>
+                <div class="sb-booking-info">
+                    <div><small>RESERVATIONS</small><b>{{ $customer->reservations->count() }}</b></div>
+                    <div><small>VERIFIED
+                            PAID</small><b>₱{{ number_format($customer->reservations->flatMap->payments->where('status', 'verified')->sum('amount'), 2) }}</b>
+                    </div>
+                    <div><small>OUTSTANDING
+                            BALANCE</small><b>₱{{ number_format($customer->reservations->sum('balance'), 2) }}</b></div>
                 </div>
             </section>
-        @empty
-            <div class="sb-panel sb-empty">This customer has no reservations yet.</div>
-        @endforelse
-    </div></div>
+
+            <div class="sb-section-head">
+                <div>
+                    <h2>Reservation history</h2>
+                    <p>Gowns, rental dates, late returns, and account payments</p>
+                </div>
+            </div>
+            @forelse($customer->reservations as $reservation)
+                <section class="sb-panel sb-customer-reservation-card">
+                    <div class="sb-panel-head">
+                        <div><span class="sb-kicker">{{ $reservation->reservation_code }}</span>
+                            <h2>{{ ucfirst(str_replace('_', ' ', $reservation->status)) }}</h2>
+                        </div><b>₱{{ number_format($reservation->grand_total, 2) }}</b>
+                    </div>
+                    <div class="sb-booking-info">
+                        <div><small>PICKUP</small><b>{{ $reservation->pickup_date?->format('M d, Y') ?? '—' }}</b></div>
+                        <div><small>RETURN DUE</small><b>{{ $reservation->return_date?->format('M d, Y') ?? '—' }}</b></div>
+                        <div><small>ACTUAL
+                                RETURN</small><b>{{ $reservation->gownReturn?->actual_return_date?->format('M d, Y') ?? 'Not returned' }}</b>
+                        </div>
+                        <div><small>LATE
+                                DAYS</small><b>{{ $reservation->display_late_days }}{{ $reservation->projected_late_fee > 0 ? ' · projected ₱' . number_format($reservation->projected_late_fee, 2) . ' late fee' : '' }}</b>
+                        </div>
+                        <div><small>ID
+                                COLLATERAL</small><b>{{ ucfirst(str_replace('_', ' ', $reservation->collateral_status ?? 'not received')) }}</b>
+                        </div>
+                    </div>
+                    @if($reservation->status === 'cancelled')
+                        <section class="sb-cancellation-admin-summary">
+                            <h3>Cancellation</h3>
+                            <div><span>Cancelled by</span><b>{{ $reservation->cancelledBy?->name ?? 'Customer' }}</b></div>
+                            <div><span>Cancelled at</span><b>{{ $reservation->cancelled_at?->format('M d, Y, g:i A') ?? '—' }}</b></div>
+                            <div><span>Reason</span><b>{{ $reservation->cancellation_reason ?? 'Customer cancelled' }}</b></div>
+                            <div><span>Down payment retained</span><b>₱{{ number_format($reservation->retained_down_payment, 2) }}</b></div>
+                            <div><span>Refund</span><b>₱{{ number_format($reservation->cancellation_refund_amount, 2) }}</b></div>
+                            <div><span>Payment status</span><b>{{ $reservation->retained_down_payment > 0 ? 'Retained · non-refundable' : 'No verified down payment' }}</b></div>
+                            @if($reservation->cancellation_history->isNotEmpty())
+                                <details>
+                                    <summary>View Reservation History</summary>
+                                    <ol>
+                                        @foreach($reservation->cancellation_history as $event)
+                                            <li><time>{{ $event->created_at?->format('M d, g:i A') }}</time> {{ $event->description }}</li>
+                                        @endforeach
+                                    </ol>
+                                </details>
+                            @endif
+                        </section>
+                    @endif
+                    @if($reservation->measurements)
+                    <p class="sb-form-intro">Measurements: {{ $reservation->measurements }}</p>@endif
+
+                    <h3 class="sb-section-subtitle">Reserved items</h3>
+                    <div class="sb-table-wrap">
+                        <table class="sb-table">
+                            <thead>
+                                <tr>
+                                    <th>GOWN</th>
+                                    <th>QUANTITY</th>
+                                    <th>RENTAL</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($reservation->items as $item)
+                                    <tr>
+                                        <td><strong>{{ $item->gown->name ?? 'Removed gown' }}</strong><small
+                                                class="sb-cell-sub">{{ $item->gown->gown_code ?? '' }}</small></td>
+                                        <td>{{ $item->quantity }}</td>
+                                        <td>₱{{ number_format($item->rental_price, 2) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="3" class="sb-empty">No reserved items recorded.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="sb-customer-finance-grid">
+                        <div>
+                            <h3 class="sb-section-subtitle">Payments</h3>
+                            <div class="sb-table-wrap">
+                                <table class="sb-table">
+                                    <thead>
+                                        <tr>
+                                            <th>DATE</th>
+                                            <th>TYPE / REFERENCE</th>
+                                            <th>METHOD</th>
+                                            <th>AMOUNT</th>
+                                            <th>STATUS</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($reservation->payments as $payment)
+                                            <tr>
+                                                <td>{{ $payment->created_at?->format('M d, Y') }}</td>
+                                                <td>{{ ucfirst(str_replace('_', ' ', $payment->payment_type)) }}<small
+                                                        class="sb-cell-sub">{{ $payment->payment_reference }}</small></td>
+                                                <td>{{ ucfirst($payment->payment_method) }}</td>
+                                                <td>₱{{ number_format($payment->amount, 2) }}</td>
+                                                <td>{{ $reservation->status === 'cancelled' && $payment->payment_type === 'downpayment' && $payment->status === 'verified' ? 'Retained' : ucfirst($payment->status) }}</td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="5" class="sb-empty">No payments recorded. Reservation is unpaid.
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="sb-section-subtitle">Penalties and balance</h3>
+                            <div class="sb-table-wrap">
+                                <table class="sb-table">
+                                    <thead>
+                                        <tr>
+                                            <th>PENALTY</th>
+                                            <th>AMOUNT</th>
+                                            <th>STATUS</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($reservation->penalties as $penalty)
+                                            <tr>
+                                                <td>{{ ucfirst(str_replace('_', ' ', $penalty->penalty_type)) }}</td>
+                                                <td>₱{{ number_format($penalty->amount, 2) }}</td>
+                                                <td>{{ ucfirst($penalty->status) }}</td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="3" class="sb-empty">No penalties recorded.</td>
+                                            </tr>
+                                        @endforelse
+                                        <tr>
+                                            <td><strong>Outstanding balance</strong></td>
+                                            <td colspan="2">
+                                                <strong>₱{{ number_format($reservation->balance, 2) }}</strong>{{ $reservation->balance > 0 ? ' · payment due' : ' · paid' }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            @empty
+                <div class="sb-panel sb-empty">This customer has no reservations yet.</div>
+            @endforelse
+        </div>
+    </div>
 </x-app-layout>

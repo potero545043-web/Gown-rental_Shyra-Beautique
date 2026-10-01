@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
-use App\Models\{Gown, Customer, Payment, Reservation, SystemSetting};
+use App\Models\{AuditLog, Gown, Customer, Payment, Reservation, SystemSetting};
 use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
@@ -12,9 +13,6 @@ use Illuminate\Validation\Rule;
 
 class DashboardController extends Controller
 {
-    /** Days a gown stays unavailable after return for professional cleaning. */
-    public const CLEANING_DAYS = 3;
-
     /** Longest rental window measured from the pickup date. */
     public const MAX_RENTAL_DAYS = 3;
 
@@ -64,14 +62,10 @@ class DashboardController extends Controller
         abort_unless(in_array($gown->status, ['available', 'reserved', 'rented'], true), 404);
         $gown->load('category');
         $lateFeePerDay = (float) SystemSetting::where('setting_key', 'late_fee_per_day')->value('setting_value');
-        $securityDeposit = (float) ($gown->security_deposit ?: 0);
-
         return view('customer.reserve', [
             'gown' => $gown,
             'lateFeePerDay' => $lateFeePerDay,
-            'securityDeposit' => $securityDeposit,
             'maxRentalDays' => self::MAX_RENTAL_DAYS,
-            'cleaningDays' => self::CLEANING_DAYS,
             'agreementVersion' => self::AGREEMENT_VERSION,
         ]);
     }
@@ -95,7 +89,7 @@ class DashboardController extends Controller
         $conflicts = $this->conflictsFor($gown, $pickup, $return);
 
         $reason = null;
-        if ($days > self::MAX_RENTAL_DAYS) {
+        if ($days + 1 > self::MAX_RENTAL_DAYS) {
             $reason = 'A gown may be rented for up to ' . self::MAX_RENTAL_DAYS . ' days from its pickup date.';
         } elseif ($conflicts) {
             $reason = 'This gown is already booked ' . $conflicts[0]['from']->toFormattedDateString()
@@ -107,9 +101,8 @@ class DashboardController extends Controller
             'available' => $reason === null,
             'reason' => $reason,
             'summary' => $reason === null ? 'Available for your dates \u00b7 Pickup ' . $pickup->toFormattedDateString()
-                . ' \u00b7 Return ' . $return->toFormattedDateString() : null,
+                . ' \u00b7 Return ' . $return->toFormattedDateString() . ' \u00b7 Subject to staff approval' : null,
             'rental_days' => $days + 1,
-            'cleaning_until' => $return->copy()->addDays(self::CLEANING_DAYS)->toFormattedDateString(),
             'conflicts' => array_map(fn($block) => [
                 'from' => $block['from']->toDateString(),
                 'through' => $block['through']->toDateString(),
@@ -120,28 +113,26 @@ class DashboardController extends Controller
 
     public function storeReservation(Request $request, Gown $gown)
     {
+        $contactNumber = preg_replace('/\D/', '', (string) $request->input('contact_number', ''));
+        $request->merge(['contact_number' => $contactNumber]);
+
         $data = $request->validate([
-            'contact_number' => ['required', 'string', 'max:40'],
+            'contact_number' => ['required', 'digits:11', 'regex:/^09\d{9}$/'],
             'pickup_date' => ['required', 'date', 'after_or_equal:today'],
             'return_date' => ['required', 'date', 'after_or_equal:pickup_date'],
-            'event_date' => ['nullable', 'date', 'after_or_equal:today', 'before_or_equal:return_date'],
-            'event_type' => ['required', 'string', 'max:80'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'bust' => ['nullable', 'numeric', 'min:0', 'max:300'],
             'waist' => ['nullable', 'numeric', 'min:0', 'max:300'],
             'hips' => ['nullable', 'numeric', 'min:0', 'max:300'],
-            'height' => ['nullable', 'numeric', 'min:0', 'max:250'],
-            'length' => ['nullable', 'numeric', 'min:0', 'max:400'],
-            'government_id' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'agreement_accepted' => ['accepted'],
-            'agreement_penalties' => ['accepted'],
-            'agreement_deposit' => ['accepted'],
-            'payment_method' => ['required', Rule::in(['cash', 'gcash', 'bank_transfer'])],
-            'payment_reference_number' => ['nullable', 'string', 'max:80', 'required_if:payment_method,gcash'],
+            'payment_method' => ['required', Rule::in(['cash'])],
+            'payment_option' => ['required', Rule::in(['full', 'downpayment'])],
             'payment_amount' => ['required', 'numeric', 'gt:0'],
-            'payment_proof' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ], [
+            'contact_number.digits' => 'Format: 09XXXXXXXXX (11 digits).',
+            'contact_number.regex' => 'Format: 09XXXXXXXXX (11 digits).',
         ]);
-        if (Carbon::parse($data['return_date'])->gt(Carbon::parse($data['pickup_date'])->addDays(self::MAX_RENTAL_DAYS))) {
+        if (Carbon::parse($data['return_date'])->gt(Carbon::parse($data['pickup_date'])->addDays(self::MAX_RENTAL_DAYS - 1))) {
             throw \Illuminate\Validation\ValidationException::withMessages([
                 'return_date' => 'A gown may be rented for up to ' . self::MAX_RENTAL_DAYS . ' days from its pickup date.',
             ]);
@@ -150,21 +141,11 @@ class DashboardController extends Controller
         if ($lateFeePerDay <= 0) {
             throw \Illuminate\Validation\ValidationException::withMessages(['return_date' => 'The shop must configure a late fee per day before accepting reservations.']);
         }
-        // Cash is settled at the counter during pickup, so it needs no receipt.
-        if ($data['payment_method'] !== 'cash' && !$request->hasFile('payment_proof')) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'payment_proof' => 'Upload a payment receipt for ' . str_replace('_', ' ', $data['payment_method']) . ' payments.',
-            ]);
-        }
         $user = $request->user();
-        $idPhotoPath = $request->file('government_id')->store('government-ids', 'local');
-        $paymentProofPath = $request->file('payment_proof')?->store('payment-proofs');
         $measurements = collect([
             'Bust' => $data['bust'] ?? null,
             'Waist' => $data['waist'] ?? null,
             'Hips' => $data['hips'] ?? null,
-            'Height' => $data['height'] ?? null,
-            'Length' => $data['length'] ?? null,
         ])->filter(fn($value) => $value !== null)
             ->map(fn($value, $key) => $key . ': ' . $value . ' cm')->values()->join('; ');
         $customer = Customer::updateOrCreate(['user_id' => $user->id], [
@@ -175,85 +156,82 @@ class DashboardController extends Controller
             'status' => 'active',
         ]);
 
-        $reservation = DB::transaction(function () use ($request, $gown, $customer, $user, $data, $idPhotoPath, $paymentProofPath, $measurements, $lateFeePerDay) {
-            $lockedGown = Gown::whereKey($gown->id)->lockForUpdate()->firstOrFail();
-            abort_unless(in_array($lockedGown->status, ['available', 'reserved', 'rented'], true), 422, 'This gown cannot be reserved at this time.');
-            // Keep the gown unavailable through its return and the following
-            // three cleaning days, including when it is returned late.
-            $conflicts = $this->conflictsFor($lockedGown, Carbon::parse($data['pickup_date']), Carbon::parse($data['return_date']));
-            if ($conflicts) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['pickup_date' => 'This gown is already reserved for some or all of those dates. Please choose another date range.']);
-            }
-            // The deposit is collateral, not rental income: it is tracked
-            // separately so it can be refunded, partially deducted, or fully
-            // deducted after the gown is returned and inspected.
-            $rentalFee = (float) $lockedGown->rental_price;
-            $deposit = (float) ($lockedGown->security_deposit ?: 0);
-            $amountDueNow = $rentalFee + $deposit;
-            if ((float) $data['payment_amount'] > $amountDueNow) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['payment_amount' => 'Payment cannot be greater than the rental fee plus the security deposit.']);
-            }
-            $booking = Reservation::create([
-                'reservation_code' => 'GR-' . now()->format('Y') . '-' . strtoupper(Str::random(6)),
-                'customer_id' => $customer->id,
-                'created_by' => $user->id,
-                'pickup_date' => $data['pickup_date'],
-                'return_date' => $data['return_date'],
-                'event_date' => $data['event_date'] ?? null,
-                'rental_total' => $rentalFee,
-                'security_deposit_total' => $deposit,
-                'late_fee_per_day' => $lateFeePerDay,
-                'grand_total' => $amountDueNow,
-                'balance' => $amountDueNow,
-                'status' => 'pending',
-                'customer_notes' => 'Event: ' . $data['event_type'] . (!empty($data['notes']) ? "\n" . $data['notes'] : ''),
-                'measurements' => $measurements ?: null,
-                'government_id_photo_path' => $idPhotoPath,
-                'agreement_version' => self::AGREEMENT_VERSION,
-                'agreement_accepted_at' => now(),
-                'agreement_accepted_ip' => $request->ip(),
-                'payment_reference_number' => $data['payment_reference_number'] ?? null,
-                'collateral_status' => 'not_received',
-            ]);
-            $booking->items()->create([
-                'gown_id' => $lockedGown->id,
-                'rental_price' => $lockedGown->rental_price,
-                'security_deposit' => $deposit,
-                'quantity' => 1,
-            ]);
-            if ($deposit > 0) {
-                $booking->securityDeposit()->create([
-                    'amount' => $deposit,
-                    'deducted_amount' => 0,
-                    'refund_amount' => 0,
-                    'status' => 'held',
-                    'remarks' => 'Held as collateral and released after the gown is returned and inspected.',
+        try {
+            $reservation = DB::transaction(function () use ($request, $gown, $customer, $user, $data, $measurements, $lateFeePerDay) {
+                $lockedGown = Gown::whereKey($gown->id)->lockForUpdate()->firstOrFail();
+                abort_unless(in_array($lockedGown->status, ['available', 'reserved', 'rented'], true), 422, 'This gown cannot be reserved at this time.');
+                $conflicts = $this->conflictsFor($lockedGown, Carbon::parse($data['pickup_date']), Carbon::parse($data['return_date']));
+                if ($conflicts) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['pickup_date' => 'This gown is already reserved for some or all of those dates. Please choose another date range.']);
+                }
+
+                $rentalFee = (float) $lockedGown->rental_price;
+                $paymentAmount = (float) $data['payment_amount'];
+                if ($paymentAmount > $rentalFee) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['payment_amount' => 'Payment cannot be greater than the rental fee.']);
+                }
+                if ($data['payment_option'] === 'downpayment' && $paymentAmount <= 500) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['payment_amount' => 'A down payment must be greater than ₱500.00 and less than the rental fee.']);
+                }
+                if ($data['payment_option'] === 'full' && round($paymentAmount, 2) !== round($rentalFee, 2)) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['payment_amount' => 'Full payment must equal the rental fee. Choose down payment to enter a smaller amount.']);
+                }
+                if ($data['payment_option'] === 'downpayment' && $paymentAmount >= $rentalFee) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['payment_amount' => 'A down payment must be greater than zero and less than the full rental fee.']);
+                }
+
+                $booking = Reservation::create([
+                    'reservation_code' => 'GR-' . now()->format('Y') . '-' . strtoupper(Str::random(6)),
+                    'customer_id' => $customer->id,
+                    'created_by' => $user->id,
+                    'pickup_date' => $data['pickup_date'],
+                    'return_date' => $data['return_date'],
+                    'rental_total' => $rentalFee,
+                    'security_deposit_total' => 0,
+                    'late_fee_per_day' => $lateFeePerDay,
+                    'grand_total' => $rentalFee,
+                    'amount_paid' => 0,
+                    'balance' => $rentalFee,
+                    'status' => 'pending',
+                    'customer_notes' => $data['notes'] ?? null,
+                    'measurements' => $measurements ?: null,
+                    'agreement_version' => self::AGREEMENT_VERSION,
+                    'agreement_accepted_at' => now(),
+                    'agreement_accepted_ip' => $request->ip(),
+                    'payment_reference_number' => null,
+                    'collateral_status' => 'not_received',
                 ]);
-            }
-            $isCash = $data['payment_method'] === 'cash';
-            $isFull = (float) $data['payment_amount'] >= $amountDueNow;
-            Payment::create([
-                'reservation_id' => $booking->id,
-                'customer_id' => $customer->id,
-                'payment_reference' => 'SBP-' . now()->format('ymd') . '-' . strtoupper(Str::random(6)),
-                'payment_type' => $isFull ? 'rental_balance' : 'downpayment',
-                'payment_method' => $data['payment_method'],
-                'amount' => $data['payment_amount'],
-                'proof_of_payment' => $paymentProofPath,
-                'status' => $isCash ? 'verified' : 'pending',
-                'remarks' => $isCash
-                    ? 'Cash payment to be settled at the counter during pickup.'
-                    : ($isFull ? 'Full rental and deposit payment submitted for review.' : 'Non-refundable down payment submitted for review.'),
+                $booking->items()->create([
+                    'gown_id' => $lockedGown->id,
+                    'rental_price' => $rentalFee,
+                    'security_deposit' => 0,
+                    'quantity' => 1,
+                ]);
+                Payment::create([
+                    'reservation_id' => $booking->id,
+                    'customer_id' => $customer->id,
+                    'payment_reference' => 'SBP-' . now()->format('ymd') . '-' . strtoupper(Str::random(6)),
+                    'payment_type' => $data['payment_option'] === 'full' ? 'rental_balance' : 'downpayment',
+                    'payment_method' => $data['payment_method'],
+                    'amount' => $paymentAmount,
+                    'status' => 'pending',
+                    'remarks' => 'Cash payment awaiting staff confirmation.',
+                ]);
+                return $booking;
+            });
+        } catch (QueryException $exception) {
+            report($exception);
+            return back()->withInput()->withErrors([
+                'reservation' => 'We could not submit your reservation (RES-500). Your request was not saved. Please try again or contact the boutique.',
             ]);
-            return $booking;
-        });
+        }
         return redirect()->route('customer.reservations.show', $reservation)->with('success', 'Reservation ' . $reservation->reservation_code . ' submitted. Staff will review your agreement and payment.');
     }
 
     public function reservations()
     {
         $customer = Customer::where('user_id', auth()->id())->first();
-        $reservations = $customer ? Reservation::with(['items.gown', 'payments', 'gownReturn', 'gownRelease', 'securityDeposit', 'penalties'])
+        $reservations = $customer ? Reservation::with(['items.gown', 'payments', 'gownReturn', 'gownRelease', 'penalties'])
             ->where('customer_id', $customer->id)
             ->latest()
             ->get() : collect();
@@ -268,11 +246,15 @@ class DashboardController extends Controller
     {
         $customer = Customer::where('user_id', auth()->id())->firstOrFail();
         abort_unless($reservation->customer_id === $customer->id, 404);
-        $reservation->load(['items.gown', 'payments', 'gownReturn', 'gownRelease', 'securityDeposit', 'penalties']);
+        $reservation->load(['items.gown', 'payments', 'gownReturn', 'gownRelease', 'penalties', 'cancelledBy']);
+        $cancellationHistory = $reservation->status === 'cancelled'
+            ? AuditLog::where('description', 'like', '%' . $reservation->reservation_code . '%')->oldest()->get()
+            : collect();
 
         return view('customer.reservation-show', [
             'reservation' => $reservation,
             'lifecycle' => $this->lifecycleFor($reservation),
+            'cancellationHistory' => $cancellationHistory,
         ]);
     }
 
@@ -281,13 +263,58 @@ class DashboardController extends Controller
         $customer = Customer::where('user_id', $request->user()->id)->firstOrFail();
         abort_unless($reservation->customer_id === $customer->id, 404);
 
-        DB::transaction(function () use ($reservation) {
+        DB::transaction(function () use ($reservation, $request) {
             $locked = Reservation::whereKey($reservation->id)->lockForUpdate()->firstOrFail();
             abort_unless(in_array($locked->status, ['pending', 'awaiting_payment'], true), 422, 'Only requests that staff have not confirmed can be cancelled here. Please contact the boutique for help with a confirmed booking.');
-            $locked->update(['status' => 'cancelled']);
+            $verifiedDownPayments = $locked->payments()
+                ->where('payment_type', 'downpayment')
+                ->where('status', 'verified')
+                ->get();
+            $retainedAmount = (float) $verifiedDownPayments->sum('amount');
+            $now = now();
+
+            $locked->update([
+                'status' => 'cancelled',
+                'cancelled_by' => $request->user()->id,
+                'cancelled_at' => $now,
+                'cancellation_reason' => 'Customer cancelled',
+                'cancellation_refund_amount' => 0,
+            ]);
+
+            foreach ($verifiedDownPayments as $payment) {
+                $payment->update([
+                    'remarks' => trim(($payment->remarks ? $payment->remarks . ' ' : '')
+                        . 'Retained after customer cancellation; non-refundable. Refund: ₱0.00.'),
+                ]);
+            }
+
+            $locked->payments()
+                ->where('payment_type', 'downpayment')
+                ->where('status', 'pending')
+                ->update([
+                    'status' => 'rejected',
+                    'remarks' => 'Reservation cancelled before this cash payment was verified; amount is not counted as paid.',
+                ]);
+
+            AuditLog::create([
+                'user_id' => $request->user()->id,
+                'action' => 'reservation.cancelled',
+                'description' => "Reservation {$locked->reservation_code}: Customer cancelled. Verified down payment retained: ₱" . number_format($retainedAmount, 2) . '. Refund: ₱0.00.',
+                'ip_address' => $request->ip(),
+            ]);
+
+            if ($retainedAmount > 0) {
+                AuditLog::create([
+                    'user_id' => $request->user()->id,
+                    'action' => 'payment.retained',
+                    'description' => "Reservation {$locked->reservation_code}: Down payment ₱" . number_format($retainedAmount, 2) . ' retained after customer cancellation; original payment amount preserved.',
+                    'ip_address' => $request->ip(),
+                ]);
+            }
         });
 
-        return back()->with('success', 'Reservation cancelled. If you have already paid, contact the boutique to arrange the next steps.');
+        return redirect()->route('customer.reservations.show', $reservation)
+            ->with('success', 'Reservation cancelled. Any verified down payment is retained under the cancellation policy.');
     }
 
     public function submitPayment(Request $request, Reservation $reservation)
@@ -300,27 +327,24 @@ class DashboardController extends Controller
         abort_if($payableNow <= 0, 422, 'Your outstanding balance is already covered by payments waiting for review.');
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'gt:0', 'lte:' . $payableNow],
-            'payment_type' => ['required', Rule::in(['downpayment', 'rental_balance', 'security_deposit', 'penalty', 'damage_fee'])],
-            'proof' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'payment_type' => ['required', Rule::in(['downpayment', 'rental_balance', 'penalty', 'damage_fee'])],
+            'amount' => ['required', 'numeric', $request->input('payment_type') === 'downpayment' ? 'gt:500' : 'gt:0', 'lte:' . $payableNow],
         ]);
-        $path = $request->file('proof')->store('payment-proofs');
         Payment::create([
             'reservation_id' => $reservation->id,
             'customer_id' => $customer->id,
             'payment_reference' => 'SBP-' . now()->format('ymd') . '-' . strtoupper(Str::random(6)),
             'payment_type' => $data['payment_type'],
-            'payment_method' => 'gcash',
+            'payment_method' => 'cash',
             'amount' => $data['amount'],
-            'proof_of_payment' => $path,
             'status' => 'pending',
-            'remarks' => $data['payment_type'] === 'downpayment' ? 'Non-refundable GCash down payment submitted by customer.' : 'GCash proof submitted by customer.',
+            'remarks' => 'Cash payment awaiting staff confirmation.',
         ]);
-        return back()->with('success', 'Payment proof submitted. The boutique will verify it shortly.');
+        return back()->with('success', 'Payment submitted. The boutique will verify it shortly.');
     }
 
     /**
-     * Date blocks for a gown covering the return date plus the cleaning
-     * turnaround, so a gown can never be double-booked.
+     * Date blocks through the return date, so a gown can never be double-booked.
      *
      * @return array<int, array{from: \Illuminate\Support\Carbon, through: \Illuminate\Support\Carbon, status: string}>
      */
@@ -333,13 +357,13 @@ class DashboardController extends Controller
             ->filter(function ($existing) use ($pickup, $return) {
                 $occupiedFrom = Carbon::parse($existing->pickup_date)->startOfDay();
                 $returnDate = $existing->gownReturn?->actual_return_date ?? $existing->return_date;
-                $occupiedThrough = Carbon::parse($returnDate)->startOfDay()->addDays(self::CLEANING_DAYS);
+                $occupiedThrough = Carbon::parse($returnDate)->startOfDay();
 
                 return $occupiedFrom->lte($return) && $occupiedThrough->gte($pickup);
             })
             ->map(fn($existing) => [
                 'from' => Carbon::parse($existing->pickup_date)->startOfDay(),
-                'through' => Carbon::parse($existing->gownReturn?->actual_return_date ?? $existing->return_date)->startOfDay()->addDays(self::CLEANING_DAYS),
+                'through' => Carbon::parse($existing->gownReturn?->actual_return_date ?? $existing->return_date)->startOfDay(),
                 'status' => $existing->status,
             ])
             ->values()
@@ -356,7 +380,6 @@ class DashboardController extends Controller
     {
         $release = $reservation->gownRelease;
         $returned = $reservation->gownReturn;
-        $deposit = $reservation->securityDeposit;
         $paid = (float) $reservation->amount_paid;
         $pending = (float) $reservation->payments->where('status', 'pending')->sum('amount');
         $closed = in_array($reservation->status, ['cancelled', 'rejected'], true);
@@ -373,7 +396,7 @@ class DashboardController extends Controller
                 'label' => 'Rental agreement',
                 'state' => $reservation->agreement_accepted_at ? 'done' : 'upcoming',
                 'meta' => $reservation->agreement_accepted_at
-                    ? 'Accepted · ' . $reservation->agreement_version . ' · ' . $reservation->agreement_accepted_at->toFormattedDateString()
+                    ? 'Accepted · ' . $reservation->agreement_accepted_at->toFormattedDateString()
                     : 'Awaiting acceptance',
             ],
             [
@@ -409,18 +432,24 @@ class DashboardController extends Controller
                     : 'Happens after return',
             ],
             [
-                'key' => 'deposit',
-                'label' => 'Security deposit',
-                'state' => !$deposit ? 'upcoming' : ($returned ? 'current' : 'upcoming'),
-                'meta' => $deposit
-                    ? '₱' . number_format($deposit->amount, 2) . ' · ' . ucfirst(str_replace('_', ' ', $deposit->status))
-                    : 'No deposit for this gown',
+                'key' => 'id',
+                'label' => 'Government ID',
+                'state' => match ($reservation->collateral_status) {
+                    'held' => 'current',
+                    'released' => 'done',
+                    default => 'upcoming',
+                },
+                'meta' => match ($reservation->collateral_status) {
+                    'held' => 'Held securely until the gown is returned',
+                    'released' => 'Returned to the customer',
+                    default => 'Bring a valid government-issued ID at pickup',
+                },
             ],
             [
                 'key' => 'completed',
                 'label' => 'Completed',
                 'state' => $reservation->status === 'completed' ? 'done' : 'upcoming',
-                'meta' => $reservation->status === 'completed' ? 'All settled' : 'Ends once the deposit is released',
+                'meta' => $reservation->status === 'completed' ? 'Gown returned and account settled' : 'After the gown is returned and inspected',
             ],
         ];
     }

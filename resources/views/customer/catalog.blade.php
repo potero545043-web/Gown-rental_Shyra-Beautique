@@ -13,7 +13,8 @@
                     <option value="">All categories</option>
                     @foreach($gowns->pluck('category.name')->filter()->unique() as $category)
                         <option value="{{ strtolower($category) }}" @selected(request('category') === strtolower($category))>
-                    {{ $category }}</option>@endforeach
+                            {{ $category }}
+                    </option>@endforeach
                 </select><select id="sizeFilter">
                     <option value="">All sizes</option>
                     @foreach($gowns->pluck('size')->filter()->unique()->sort() as $size)
@@ -23,12 +24,14 @@
                     <option value="">All styles</option>
                     @foreach($gowns->pluck('style')->filter()->unique()->sort() as $style)
                         <option value="{{ strtolower($style) }}" @selected(request('style') === strtolower($style))>
-                    {{ $style }}</option>@endforeach
+                            {{ $style }}
+                    </option>@endforeach
                 </select><select id="colorFilter">
                     <option value="">All colors</option>
                     @foreach($gowns->pluck('color')->filter()->unique()->sort() as $color)
                         <option value="{{ strtolower($color) }}" @selected(request('color') === strtolower($color))>
-                    {{ $color }}</option>@endforeach
+                            {{ $color }}
+                    </option>@endforeach
                 </select><select id="availabilityFilter">
                     <option value="">Any availability</option>
                     <option value="available">Available</option>
@@ -41,24 +44,26 @@
                         data-category="{{ strtolower($gown->category->name ?? '') }}"
                         data-size="{{ strtolower($gown->size ?? '') }}" data-style="{{ strtolower($gown->style ?? '') }}"
                         data-color="{{ strtolower($gown->color ?? '') }}" data-status="{{ $gown->status }}">
-                        <a class="sb-product-image @if(!$gown->image) is-empty @endif"
+                        <a class="sb-product-image {{ $gown->image ? '' : 'is-empty' }}"
                             href="{{ route(auth()->user()->role === 'customer' ? 'customer.gowns.show' : auth()->user()->role . '.catalog.show', $gown) }}"
-                            @if($gown->image) style="background-image:url('{{ asset('storage/' . $gown->image) }}')"
-                            @endif><span class="sb-available">{{ ucfirst(str_replace('_', ' ', $gown->status)) }}</span></a>
-                        <div class="sb-product-info"><small>{{ $gown->category->name ?? 'THE COLLECTION' }} · SIZE
-                                {{ $gown->size ?? 'VARIOUS' }}</small>
+                            aria-label="View {{ $gown->name }}">
+                            @if($gown->image)
+                                <img src="{{ asset('storage/' . $gown->image) }}" alt="{{ $gown->name }}" loading="lazy"
+                                    decoding="async">
+                            @else
+                                <span class="sb-product-image-empty">Photo coming soon</span>
+                            @endif
+                        </a>
+                        <div class="sb-product-info">
                             <h3>{{ $gown->name }}</h3>
-                            <p class="sb-product-meta">@if($gown->color)<span>{{ $gown->color }}</span>@endif
-                                @if($gown->style)<span>{{ $gown->style }}</span>@endif</p>
-                            <a class="sb-product-details"
-                                href="{{ route(auth()->user()->role === 'customer' ? 'customer.gowns.show' : auth()->user()->role . '.catalog.show', $gown) }}">View
-                                details</a>
-                            <div><b>₱{{ number_format($gown->rental_price, 0) }}</b><span>/ rental</span>
+                            <div><b>₱{{ number_format($gown->rental_price, 0) }}</b>
                                 @if($gown->status === 'available' && auth()->user()->role === 'customer')<a
-                                    href="{{ route('customer.reserve', $gown) }}">Reserve →</a>
+                                    class="sb-product-reserve" href="{{ route('customer.reserve', $gown) }}">Start
+                                    reservation <span aria-hidden="true">→</span></a>
                                 @elseif($gown->status === 'available' && in_array(auth()->user()->role, ['owner', 'employee'], true))<a
+                                    class="sb-product-reserve"
                                     href="{{ route(auth()->user()->role . '.catalog.reserve', $gown) }}">Start reservation
-                                →</a>@endif
+                                <span aria-hidden="true">→</span></a>@endif
                             </div>
                         </div>
                     </article>

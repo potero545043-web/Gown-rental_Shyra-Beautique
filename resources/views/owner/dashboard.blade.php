@@ -250,7 +250,7 @@
 
                                     <th
                                         class="text-left px-6 py-4 text-[10px] font-semibold tracking-wider text-[#95878D] uppercase">
-                                        Event Date
+                                        Pickup Date
                                     </th>
 
                                     <th

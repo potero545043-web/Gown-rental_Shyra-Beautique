@@ -1,33 +1,55 @@
 @php
     $role = auth()->user()->role;
     $dashboard = ['owner' => 'owner.dashboard', 'employee' => 'employee.dashboard', 'customer' => 'customer.dashboard'][$role] ?? 'login';
-    $links = match ($role) {
+
+    // Navigation is grouped into sections so the sidebar shows a hierarchy
+    // instead of a flat list of equally-weighted destinations.
+    $sections = match ($role) {
         'owner' => [
-            ['Overview', 'owner.dashboard', 'grid'],
-            ['Catalog', 'owner.catalog', 'dress'],
-            ['Reservations', 'owner.reservations', 'calendar'],
-            ['Rentals & returns', 'owner.rentals', 'calendar'],
-            ['Customers', 'owner.customers', 'users'],
-            ['Employees', 'owner.employees', 'team'],
-            ['Payments', 'owner.payments', 'card'],
-            ['Reports', 'owner.reports', 'chart'],
-            ['Settings', 'owner.settings', 'tag'],
+            'OPERATIONS' => [
+                ['Overview', 'owner.dashboard', 'grid'],
+                ['Catalog', 'owner.catalog', 'dress'],
+                ['Reservations', 'owner.reservations', 'calendar'],
+                ['Rentals & returns', 'owner.rentals', 'calendar'],
+            ],
+            'BUSINESS' => [
+                ['Customers', 'owner.customers', 'users'],
+                ['Payments', 'owner.payments', 'card'],
+            ],
+            'MANAGEMENT' => [
+                ['Employees', 'owner.employees', 'team'],
+                ['Reports', 'owner.reports', 'chart'],
+                ['Settings', 'owner.settings', 'tag'],
+            ],
         ],
         'employee' => [
-            ['Overview', 'employee.dashboard', 'grid'],
-            ['Reservations', 'employee.reservations', 'calendar'],
-            ['Rentals & returns', 'employee.rentals', 'calendar'],
-            ['Gown catalog', 'employee.catalog', 'dress'],
-            ['Maintenance', 'employee.maintenance', 'spark'],
-            ['Customers', 'employee.customers', 'users'],
-            ['Payments', 'employee.payments', 'card'],
+            'OPERATIONS' => [
+                ['Overview', 'employee.dashboard', 'grid'],
+                ['Reservations', 'employee.reservations', 'calendar'],
+                ['Rentals & returns', 'employee.rentals', 'calendar'],
+            ],
+            'BUSINESS' => [
+                ['Gown catalog', 'employee.catalog', 'dress'],
+                ['Maintenance', 'employee.maintenance', 'spark'],
+                ['Customers', 'employee.customers', 'users'],
+                ['Payments', 'employee.payments', 'card'],
+            ],
         ],
         default => [
-            ['Dashboard', 'customer.dashboard', 'grid'],
-            ['Collection', 'customer.catalog', 'dress'],
-            ['My Reservations', 'customer.reservations', 'calendar'],
+            'MY ACCOUNT' => [
+                ['Dashboard', 'customer.dashboard', 'grid'],
+                ['Collection', 'customer.catalog', 'dress'],
+                ['My Reservations', 'customer.reservations', 'calendar'],
+            ],
         ],
     };
+    $isActive = fn($routeName) => request()->routeIs($routeName)
+        || ($routeName === 'owner.catalog' && request()->routeIs('owner.catalog.*'))
+        || ($routeName === 'owner.gowns.index' && request()->routeIs('owner.gowns.*'))
+        || ($routeName === 'owner.categories.index' && request()->routeIs('owner.categories.*'))
+        || ($routeName === 'owner.accessories.index' && request()->routeIs('owner.accessories.*'))
+        ? 'is-active'
+        : '';
 @endphp
 <svg class="sb-icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <symbol id="sb-i-grid" viewBox="0 0 24 24">
@@ -76,41 +98,49 @@
     </symbol>
 </svg>
 <aside class="sb-sidebar" :class="sidebarOpen ? 'sb-sidebar-open' : ''">
-    <a class="sb-brand sb-sidebar-brand" href="{{ route($dashboard) }}"><span class="sb-brand-mark">S</span><span>Shyra
-            <i>Beautique</i><small>GOWN RENTAL STUDIO</small></span></a>
-    <div class="sb-sidebar-caption">{{ $role === 'customer' ? 'CUSTOMER MENU' : 'WORKSPACE' }}</div>
-    <nav class="sb-side-links">
-        @foreach($links as [$label, $routeName, $icon])
-            <a class="sb-side-link {{ request()->routeIs($routeName) || ($routeName === 'owner.catalog' && request()->routeIs('owner.catalog.*')) || ($routeName === 'owner.gowns.index' && request()->routeIs('owner.gowns.*')) || ($routeName === 'owner.categories.index' && request()->routeIs('owner.categories.*')) || ($routeName === 'owner.accessories.index' && request()->routeIs('owner.accessories.*')) ? 'is-active' : '' }}"
-                href="{{ route($routeName) }}">
-                <svg>
-                    <use href="#sb-i-{{ $icon }}" />
-                </svg><span>{{ $label }}</span>
-                @if($label === 'Reservations' && $role !== 'customer' && \App\Models\Reservation::where('status', 'pending')->exists())<i
-                class="sb-side-dot"></i>@endif
-            </a>
-        @endforeach
-        @if($role === 'owner')
-            <details class="sb-inventory-nav" {{ request()->routeIs('owner.gowns.*', 'owner.categories.*', 'owner.accessories.*', 'owner.maintenance') ? 'open' : '' }}>
-                <summary
-                    class="sb-side-link {{ request()->routeIs('owner.gowns.*', 'owner.categories.*', 'owner.accessories.*', 'owner.maintenance') ? 'is-active' : '' }}">
+    <a class="sb-brand sb-sidebar-brand" href="{{ route($dashboard) }}">
+        <span class="sb-logo-avatar">
+            <img src="{{ asset('images/Logo.png') }}" alt="Shyra Beautique" class="sb-sidebar-logo">
+        </span>
+        <span class="sb-sidebar-brand-copy">
+            <b>Shyra Beautique</b>
+            <small>GOWN RENTAL STUDIO</small>
+        </span>
+    </a>
+    @foreach($sections as $sectionLabel => $sectionLinks)
+        <div class="sb-sidebar-caption">{{ $sectionLabel }}</div>
+        <nav class="sb-side-links">
+            @foreach($sectionLinks as [$label, $routeName, $icon])
+                <a class="sb-side-link {{ $isActive($routeName) }}" href="{{ route($routeName) }}">
                     <svg>
-                        <use href="#sb-i-dress" />
-                    </svg><span>Inventory</span><span class="sb-inventory-chevron">⌄</span>
-                </summary>
-                <div class="sb-inventory-subnav">
-                    <a class="{{ request()->routeIs('owner.gowns.*') ? 'is-active' : '' }}"
-                        href="{{ route('owner.gowns.index') }}">Gowns</a>
-                    <a class="{{ request()->routeIs('owner.categories.*') ? 'is-active' : '' }}"
-                        href="{{ route('owner.categories.index') }}">Categories</a>
-                    <a class="{{ request()->routeIs('owner.accessories.*') ? 'is-active' : '' }}"
-                        href="{{ route('owner.accessories.index') }}">Accessories</a>
-                    <a class="{{ request()->routeIs('owner.maintenance') ? 'is-active' : '' }}"
-                        href="{{ route('owner.maintenance') }}">Maintenance</a>
-                </div>
-            </details>
-        @endif
-    </nav>
+                        <use href="#sb-i-{{ $icon }}" />
+                    </svg><span>{{ $label }}</span>
+                    @if($label === 'Reservations' && $role !== 'customer' && \App\Models\Reservation::where('status', 'pending')->exists())<i
+                    class="sb-side-dot"></i>@endif
+                </a>
+            @endforeach
+            @if($role === 'owner' && $sectionLabel === 'BUSINESS')
+                <details class="sb-inventory-nav" {{ request()->routeIs('owner.gowns.*', 'owner.categories.*', 'owner.accessories.*', 'owner.maintenance') ? 'open' : '' }}>
+                    <summary
+                        class="sb-side-link {{ request()->routeIs('owner.gowns.*', 'owner.categories.*', 'owner.accessories.*', 'owner.maintenance') ? 'is-active' : '' }}">
+                        <svg>
+                            <use href="#sb-i-dress" />
+                        </svg><span>Inventory</span><span class="sb-inventory-chevron">⌄</span>
+                    </summary>
+                    <div class="sb-inventory-subnav">
+                        <a class="{{ request()->routeIs('owner.gowns.*') ? 'is-active' : '' }}"
+                            href="{{ route('owner.gowns.index') }}">Gowns</a>
+                        <a class="{{ request()->routeIs('owner.categories.*') ? 'is-active' : '' }}"
+                            href="{{ route('owner.categories.index') }}">Categories</a>
+                        <a class="{{ request()->routeIs('owner.accessories.*') ? 'is-active' : '' }}"
+                            href="{{ route('owner.accessories.index') }}">Accessories</a>
+                        <a class="{{ request()->routeIs('owner.maintenance') ? 'is-active' : '' }}"
+                            href="{{ route('owner.maintenance') }}">Maintenance</a>
+                    </div>
+                </details>
+            @endif
+        </nav>
+    @endforeach
     <div class="sb-sidebar-bottom">
         <a class="sb-side-link {{ request()->routeIs('profile.edit') ? 'is-active' : '' }}"
             href="{{ route('profile.edit') }}"><svg>

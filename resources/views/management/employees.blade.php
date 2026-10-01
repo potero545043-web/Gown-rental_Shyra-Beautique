@@ -16,13 +16,14 @@
                 <div class="sb-form-errors">{{ $errors->first() }}</div>
             @endif
 
-            <section class="sb-panel">
+            <section class="sb-panel sb-team-panel">
                 <div class="sb-panel-head sb-team-table-head">
                     <div>
                         <h2>Staff directory</h2>
                         <p>{{ $employees->total() }} employee accounts</p>
                     </div>
-                    <button class="sb-inventory-primary" type="button" onclick="document.getElementById('employee-create-dialog').showModal()">
+                    <button class="sb-inventory-primary" type="button"
+                        onclick="document.getElementById('employee-create-dialog').showModal()">
                         Add employee <span aria-hidden="true">＋</span>
                     </button>
                 </div>
@@ -47,28 +48,38 @@
                                     </td>
                                     <td data-label="Contact">
                                         <span>{{ $employee->user->email }}</span>
-                                        <small class="sb-cell-sub">{{ $employee->contact_number ?: 'No phone number' }}</small>
+                                        <small
+                                            class="sb-cell-sub">{{ $employee->contact_number ?: 'No phone number' }}</small>
                                     </td>
                                     <td data-label="Position">{{ $employee->position }}</td>
-                                    <td data-label="Status"><span class="sb-status">{{ ucfirst($employee->status) }}</span></td>
+                                    <td data-label="Status"><span class="sb-status">{{ ucfirst($employee->status) }}</span>
+                                    </td>
                                     <td data-label="Actions">
                                         <div class="sb-team-table-actions">
                                             <details class="sb-employee-edit">
                                                 <summary>Edit</summary>
-                                                <form method="POST" action="{{ route('owner.employees.update', $employee) }}">
-                                                    @csrf
-                                                    @method('PUT')
-                                                    <label>Name<input name="name" value="{{ $employee->full_name }}" required></label>
-                                                    <label>Email<input type="email" name="email" value="{{ $employee->user->email }}" required></label>
-                                                    <label>Phone<input name="contact_number" value="{{ $employee->contact_number }}"></label>
-                                                    <label>Position<input name="position" value="{{ $employee->position }}" required></label>
-                                                    <button class="sb-small-btn">Save details</button>
-                                                </form>
+                                                <div class="sb-employee-edit-panel">
+                                                    <form method="POST"
+                                                        action="{{ route('owner.employees.update', $employee) }}">
+                                                        @csrf
+                                                        @method('PUT')
+                                                        <label>Name<input name="name" value="{{ $employee->full_name }}"
+                                                                required></label>
+                                                        <label>Email<input type="email" name="email"
+                                                                value="{{ $employee->user->email }}" required></label>
+                                                        <label>Phone<input name="contact_number"
+                                                                value="{{ $employee->contact_number }}"></label>
+                                                        <label>Position<input name="position"
+                                                                value="{{ $employee->position }}" required></label>
+                                                        <button class="sb-small-btn">Save details</button>
+                                                    </form>
+                                                </div>
                                             </details>
                                             <form method="POST" action="{{ route('owner.employees.toggle', $employee) }}">
                                                 @csrf
                                                 @method('PATCH')
-                                                <button class="sb-small-btn {{ $employee->status === 'active' ? 'sb-deactivate' : '' }}">{{ $employee->status === 'active' ? 'Deactivate' : 'Activate' }}</button>
+                                                <button
+                                                    class="sb-small-btn {{ $employee->status === 'active' ? 'sb-deactivate' : '' }}">{{ $employee->status === 'active' ? 'Deactivate' : 'Activate' }}</button>
                                             </form>
                                         </div>
                                     </td>
@@ -77,7 +88,8 @@
                                 <tr>
                                     <td colspan="5" class="sb-empty sb-team-empty">
                                         <strong>No employees yet</strong>
-                                        <small>Add your first staff account to give your team access to rental operations.</small>
+                                        <small>Add your first staff account to give your team access to rental
+                                            operations.</small>
                                     </td>
                                 </tr>
                             @endforelse
@@ -114,16 +126,20 @@
                     </label>
                     <label>Password
                         <span class="sb-employee-password" x-data="{ showPassword: false }">
-                            <input id="employee-password" x-bind:type="showPassword ? 'text' : 'password'" name="password" minlength="8" required autocomplete="new-password">
+                            <input id="employee-password" x-bind:type="showPassword ? 'text' : 'password'"
+                                name="password" minlength="8" required autocomplete="new-password">
                             <button type="button" x-on:click.prevent="showPassword = !showPassword"
                                 x-bind:aria-label="showPassword ? 'Hide password' : 'Show password'"
                                 x-bind:aria-pressed="showPassword">
-                                <svg x-show="!showPassword" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <svg x-show="!showPassword" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="1.8">
                                     <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
                                     <circle cx="12" cy="12" r="3" />
                                 </svg>
-                                <svg x-show="showPassword" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                    <path d="m3 3 18 18M10.6 6.2A10.8 10.8 0 0 1 12 6c6.5 0 10 6 10 6a16 16 0 0 1-3.1 3.8M6.2 6.3C3.5 8 2 12 2 12s3.5 6 10 6c1.3 0 2.5-.3 3.5-.7" />
+                                <svg x-show="showPassword" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="1.8">
+                                    <path
+                                        d="m3 3 18 18M10.6 6.2A10.8 10.8 0 0 1 12 6c6.5 0 10 6 10 6a16 16 0 0 1-3.1 3.8M6.2 6.3C3.5 8 2 12 2 12s3.5 6 10 6c1.3 0 2.5-.3 3.5-.7" />
                                     <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
                                 </svg>
                             </button>
@@ -132,16 +148,20 @@
                         <x-input-error :messages="$errors->get('password')" />
                     </label>
                     <label>Contact number
-                        <input type="tel" inputmode="tel" name="contact_number" autocomplete="tel" placeholder="09XX XXX XXXX" value="{{ old('contact_number') }}">
+                        <input type="tel" inputmode="tel" name="contact_number" autocomplete="tel"
+                            placeholder="09XX XXX XXXX" value="{{ old('contact_number') }}">
                         <x-input-error :messages="$errors->get('contact_number')" />
                     </label>
                     <label>Position
-                        <input name="position" placeholder="e.g. Rental Staff" value="{{ old('position', 'Rental Staff') }}" required>
-                        <small class="sb-side-drawer-help">Position title only; account permissions stay employee-level.</small>
+                        <input name="position" placeholder="e.g. Rental Staff"
+                            value="{{ old('position', 'Rental Staff') }}" required>
+                        <small class="sb-side-drawer-help">Position title only; account permissions stay
+                            employee-level.</small>
                         <x-input-error :messages="$errors->get('position')" />
                     </label>
                     <div class="sb-side-drawer-actions">
-                        <button class="sb-side-drawer-cancel" type="button" onclick="document.getElementById('employee-create-dialog').close()">Cancel</button>
+                        <button class="sb-side-drawer-cancel" type="button"
+                            onclick="document.getElementById('employee-create-dialog').close()">Cancel</button>
                         <button class="sb-small-btn" type="submit">Create employee</button>
                     </div>
                 </form>

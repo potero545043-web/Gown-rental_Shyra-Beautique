@@ -18,7 +18,7 @@
         href="https://fonts.bunny.net/css?family=dm-sans:400,500,600,700|playfair-display:400,500,600,700&display=swap"
         rel="stylesheet">
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/css/gold-palette.css', 'resources/js/app.js'])
 
     <style>
         /* ================================
@@ -235,12 +235,13 @@
 </head>
 
 
-<body class="font-body bg-[#F7EFE4] text-[#2E2A26] antialiased">
+<body class="font-body bg-[#F0E1BE] text-[#3A2C1A] antialiased">
 
 
     <!-- NAVBAR -->
 
-    <header class="fixed top-0 left-0 right-0 z-50 bg-[#F7EFE4]/95 backdrop-blur-md border-b border-[#DCCBB2]">
+    <header
+        class="sb-home-nav fixed top-0 left-0 right-0 z-50 bg-[#F0E1BE]/95 backdrop-blur-md border-b border-[#C9A961]">
 
         <div class="max-w-7xl mx-auto px-6 lg:px-10">
 
@@ -249,23 +250,13 @@
 
                 <!-- LOGO -->
 
-                <a href="#home" class="flex items-center gap-3">
+                <a href="#home" class="flex items-center gap-4">
 
-                    <div class="w-10 h-10 rounded-full bg-[#5C1A2B] flex items-center justify-center">
+                    <img src="{{ asset('images/Logo.png') }}" alt="Shyra Beautique" class="sb-logo-lockup">
 
-                        <span class="text-white font-display text-lg">
-                            S
-                        </span>
+                    <div class="leading-tight border-l border-[#DCC79A] pl-4">
 
-                    </div>
-
-                    <div class="leading-tight">
-
-                        <div class="font-display text-[#5C1A2B] text-xl font-semibold">
-                            Shyra Beautique
-                        </div>
-
-                        <div class="text-[10px] tracking-[0.2em] uppercase text-[#8B6F61]">
+                        <div class="text-[10px] tracking-[0.2em] uppercase text-[#7A6440]">
                             Gown Rental
                         </div>
 
@@ -278,23 +269,23 @@
 
                 <nav class="hidden lg:flex items-center gap-8">
 
-                    <a href="#home" class="text-sm font-medium text-[#5C1A2B] hover:text-[#8B3F52] transition">
+                    <a href="#home" class="text-sm font-medium text-[#5E1229] hover:text-[#9A7633] transition">
                         Home
                     </a>
 
-                    <a href="#collection" class="text-sm font-medium text-[#5C1A2B] hover:text-[#8B3F52] transition">
+                    <a href="#collection" class="text-sm font-medium text-[#5E1229] hover:text-[#9A7633] transition">
                         Gowns
                     </a>
 
-                    <a href="#how-it-works" class="text-sm font-medium text-[#5C1A2B] hover:text-[#8B3F52] transition">
+                    <a href="#how-it-works" class="text-sm font-medium text-[#5E1229] hover:text-[#9A7633] transition">
                         How It Works
                     </a>
 
-                    <a href="#about" class="text-sm font-medium text-[#5C1A2B] hover:text-[#8B3F52] transition">
+                    <a href="#about" class="text-sm font-medium text-[#5E1229] hover:text-[#9A7633] transition">
                         About Us
                     </a>
 
-                    <a href="#contact" class="text-sm font-medium text-[#5C1A2B] hover:text-[#8B3F52] transition">
+                    <a href="#contact" class="text-sm font-medium text-[#5E1229] hover:text-[#9A7633] transition">
                         Contact
                     </a>
 
@@ -308,7 +299,7 @@
                     <!-- SEARCH -->
 
                     <button
-                        class="hidden sm:flex w-10 h-10 rounded-full items-center justify-center text-[#5C1A2B] hover:bg-[#ECDCC5] transition">
+                        class="hidden sm:flex w-10 h-10 rounded-full items-center justify-center text-[#5E1229] hover:bg-[#E3CE9E] transition">
 
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor" stroke-width="1.7">
@@ -324,7 +315,7 @@
                     <!-- ACCOUNT -->
 
                     <a href="/login"
-                        class="flex w-10 h-10 rounded-full items-center justify-center text-[#5C1A2B] bg-white hover:bg-[#ECDCC5] transition cursor-pointer">
+                        class="flex w-10 h-10 rounded-full items-center justify-center text-[#5E1229] bg-white hover:bg-[#E3CE9E] transition cursor-pointer">
 
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor" stroke-width="1.7">
@@ -342,7 +333,7 @@
                     <!-- LOGIN -->
 
                     <a href="{{ route('login') }}"
-                        class="hidden sm:inline-flex luxury-button items-center justify-center px-6 py-3 rounded-full bg-[#5C1A2B] text-white text-sm font-semibold">
+                        class="hidden sm:inline-flex luxury-button items-center justify-center px-6 py-3 rounded-full bg-[#5E1229] text-white text-sm font-semibold">
 
                         Login
 
@@ -365,20 +356,26 @@
 
         <!-- HERO -->
 
-        <section class="relative min-h-[620px] lg:min-h-[680px] overflow-hidden bg-[#F2E6D5]">
+        <section class="relative min-h-[620px] lg:min-h-[680px] overflow-hidden bg-[#E6D2A2]">
 
 
             <!-- BACKGROUND IMAGE -->
 
+            <!-- The gown sits in the right third of the artwork, so the image is
+                 anchored to the right to keep it in frame at every width. -->
+
             <img src="{{ asset('images/background.png') }}" alt="Elegant gown collection"
-                class="absolute inset-0 w-full h-full object-cover object-center">
+                class="absolute inset-0 w-full h-full object-cover object-[70%_center]">
 
 
             <!-- OVERLAY -->
 
-            <div class="absolute inset-0 bg-[#F7EFE4]/65"></div>
+            <!-- A left-weighted scrim only. It keeps the headline legible on the
+                 plain wall area and then clears completely across the gown, so the
+                 red dress is not veiled at all. The previous stack of two full-bleed
+                 cream washes was what desaturated it. -->
 
-            <div class="absolute inset-0 bg-gradient-to-r from-[#F7EFE4]/95 via-[#F7EFE4]/70 to-transparent">
+            <div class="absolute inset-0 bg-gradient-to-r from-[#F4E7CE]/95 via-[#F4E7CE]/55 via-55% to-[#F4E7CE]/0">
             </div>
 
 
@@ -391,9 +388,9 @@
 
                     <div class="inline-flex items-center gap-2 mb-6">
 
-                        <span class="w-10 h-px bg-[#8B3F52]"></span>
+                        <span class="w-10 h-px bg-[#9A7633]"></span>
 
-                        <span class="text-xs tracking-[0.25em] uppercase text-[#8B3F52] font-semibold">
+                        <span class="text-xs tracking-[0.25em] uppercase text-[#9A7633] font-semibold">
 
                             Shyra Beautique
 
@@ -403,20 +400,20 @@
 
 
                     <h1
-                        class="font-display text-5xl sm:text-6xl lg:text-7xl leading-[1.05] text-[#5C1A2B] font-semibold">
+                        class="font-display text-5xl sm:text-6xl lg:text-7xl leading-[1.05] text-[#5E1229] font-semibold">
 
                         Elegant Gowns
 
                         <br>
 
-                        <span class="font-normal italic text-[#8B3F52]">
+                        <span class="font-normal italic text-[#9A7633]">
                             for Every Occasion
                         </span>
 
                     </h1>
 
 
-                    <p class="mt-7 text-lg leading-8 text-[#3D3733] max-w-xl">
+                    <p class="mt-7 text-lg leading-8 text-[#4A3C26] max-w-xl">
 
                         Find a gown that makes you feel confident,
                         beautiful, and unforgettable. Discover elegant
@@ -429,7 +426,7 @@
                     <div class="mt-9 flex flex-wrap gap-4">
 
                         <a href="#collection"
-                            class="luxury-button inline-flex items-center justify-center px-7 py-3.5 rounded-full bg-[#5C1A2B] text-white font-semibold">
+                            class="luxury-button inline-flex items-center justify-center px-7 py-3.5 rounded-full bg-[#5E1229] text-white font-semibold">
 
                             Explore Gowns
 
@@ -444,7 +441,7 @@
 
 
                         <a href="{{ route('register') }}"
-                            class="luxury-button inline-flex items-center justify-center px-7 py-3.5 rounded-full border border-[#8B3F52] text-[#5C1A2B] font-semibold hover:bg-white/50 transition">
+                            class="luxury-button inline-flex items-center justify-center px-7 py-3.5 rounded-full border border-[#9A7633] text-[#5E1229] font-semibold hover:bg-white/50 transition">
 
                             Create Account
 
@@ -464,7 +461,7 @@
 
         <!-- BENEFITS -->
 
-        <section class="scroll-reveal bg-[#F2E6D5] border-y border-[#DCCBB2]">
+        <section class="scroll-reveal bg-[#E9D7AC] border-y border-[#C9A961]">
 
             <div class="max-w-7xl mx-auto px-6 lg:px-10">
 
@@ -473,20 +470,20 @@
 
                     <!-- BENEFIT 1 -->
 
-                    <div class="py-10 px-6 text-center lg:border-r border-[#DCCBB2]">
+                    <div class="py-10 px-6 text-center lg:border-r border-[#C9A961]">
 
                         <div
-                            class="mx-auto mb-4 w-12 h-12 rounded-full bg-[#F7EFE4] flex items-center justify-center text-[#5C1A2B]">
+                            class="mx-auto mb-4 w-12 h-12 rounded-full bg-[#F0E1BE] flex items-center justify-center text-[#5E1229]">
 
                             ✦
 
                         </div>
 
-                        <h3 class="font-display text-xl text-[#5C1A2B]">
+                        <h3 class="font-display text-xl text-[#5E1229]">
                             Elegant Collection
                         </h3>
 
-                        <p class="mt-2 text-sm text-[#6B625D]">
+                        <p class="mt-2 text-sm text-[#6B5B45]">
                             Beautiful gowns for every special occasion.
                         </p>
 
@@ -495,20 +492,20 @@
 
                     <!-- BENEFIT 2 -->
 
-                    <div class="py-10 px-6 text-center lg:border-r border-[#DCCBB2]">
+                    <div class="py-10 px-6 text-center lg:border-r border-[#C9A961]">
 
                         <div
-                            class="mx-auto mb-4 w-12 h-12 rounded-full bg-[#F7EFE4] flex items-center justify-center text-[#5C1A2B]">
+                            class="mx-auto mb-4 w-12 h-12 rounded-full bg-[#F0E1BE] flex items-center justify-center text-[#5E1229]">
 
                             ♡
 
                         </div>
 
-                        <h3 class="font-display text-xl text-[#5C1A2B]">
+                        <h3 class="font-display text-xl text-[#5E1229]">
                             Easy Reservation
                         </h3>
 
-                        <p class="mt-2 text-sm text-[#6B625D]">
+                        <p class="mt-2 text-sm text-[#6B5B45]">
                             Reserve your preferred gown online with ease.
                         </p>
 
@@ -517,20 +514,20 @@
 
                     <!-- BENEFIT 3 -->
 
-                    <div class="py-10 px-6 text-center lg:border-r border-[#DCCBB2]">
+                    <div class="py-10 px-6 text-center lg:border-r border-[#C9A961]">
 
                         <div
-                            class="mx-auto mb-4 w-12 h-12 rounded-full bg-[#F7EFE4] flex items-center justify-center text-[#5C1A2B]">
+                            class="mx-auto mb-4 w-12 h-12 rounded-full bg-[#F0E1BE] flex items-center justify-center text-[#5E1229]">
 
                             ◷
 
                         </div>
 
-                        <h3 class="font-display text-xl text-[#5C1A2B]">
+                        <h3 class="font-display text-xl text-[#5E1229]">
                             Flexible Schedule
                         </h3>
 
-                        <p class="mt-2 text-sm text-[#6B625D]">
+                        <p class="mt-2 text-sm text-[#6B5B45]">
                             Check your reservation schedule anytime.
                         </p>
 
@@ -542,17 +539,17 @@
                     <div class="py-10 px-6 text-center">
 
                         <div
-                            class="mx-auto mb-4 w-12 h-12 rounded-full bg-[#F7EFE4] flex items-center justify-center text-[#5C1A2B]">
+                            class="mx-auto mb-4 w-12 h-12 rounded-full bg-[#F0E1BE] flex items-center justify-center text-[#5E1229]">
 
                             ♡
 
                         </div>
 
-                        <h3 class="font-display text-xl text-[#5C1A2B]">
+                        <h3 class="font-display text-xl text-[#5E1229]">
                             Trusted Service
                         </h3>
 
-                        <p class="mt-2 text-sm text-[#6B625D]">
+                        <p class="mt-2 text-sm text-[#6B5B45]">
                             We help make your special event memorable.
                         </p>
 
@@ -568,7 +565,7 @@
 
         <!-- FEATURED GOWNS -->
 
-        <section id="collection" class="scroll-reveal bg-[#F7EFE4] py-24">
+        <section id="collection" class="scroll-reveal bg-[#F0E1BE] py-24">
 
             <div class="max-w-7xl mx-auto px-6 lg:px-10">
 
@@ -577,19 +574,19 @@
 
                     <div>
 
-                        <p class="text-xs tracking-[0.25em] uppercase text-[#8B3F52] font-semibold mb-3">
+                        <p class="text-xs tracking-[0.25em] uppercase text-[#9A7633] font-semibold mb-3">
 
                             Our Collection
 
                         </p>
 
-                        <h2 class="font-display text-4xl sm:text-5xl text-[#5C1A2B]">
+                        <h2 class="font-display text-4xl sm:text-5xl text-[#5E1229]">
 
                             Featured Gowns
 
                         </h2>
 
-                        <p class="mt-4 max-w-xl text-[#6B625D] leading-7">
+                        <p class="mt-4 max-w-xl text-[#6B5B45] leading-7">
 
                             Explore some of our elegant gowns and formal wear
                             available for your next special occasion.
@@ -600,7 +597,7 @@
 
 
                     <a href="{{ route('register') }}"
-                        class="text-sm font-semibold text-[#5C1A2B] hover:text-[#8B3F52] transition">
+                        class="text-sm font-semibold text-[#5E1229] hover:text-[#9A7633] transition">
 
                         View All Gowns →
 
@@ -619,13 +616,13 @@
 
                     <article class="scroll-item gown-card bg-white rounded-2xl overflow-hidden card-shadow">
 
-                        <div class="relative h-[360px] overflow-hidden bg-[#EADCCB]">
+                        <div class="relative h-[360px] overflow-hidden bg-[#E0CB9C]">
 
                             <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwJM7S0DVfveufp0vEOGoQ19JSazLhHuSDybMWoS-P7Xs98bds71H_s7o&s=10"
                                 alt="Champagne Dream gown" class="gown-image w-full h-full object-cover">
 
                             <span
-                                class="absolute top-4 left-4 bg-white/90 text-[#5C1A2B] text-xs font-semibold px-3 py-1.5 rounded-full">
+                                class="absolute top-4 left-4 bg-white/90 text-[#5E1229] text-xs font-semibold px-3 py-1.5 rounded-full">
 
                                 Featured
 
@@ -636,13 +633,13 @@
 
                         <div class="p-5">
 
-                            <p class="text-xs uppercase tracking-wider text-[#8B6F61]">
+                            <p class="text-xs uppercase tracking-wider text-[#7A6440]">
 
                                 Formal Gown
 
                             </p>
 
-                            <h3 class="font-display text-2xl text-[#5C1A2B] mt-1">
+                            <h3 class="font-display text-2xl text-[#5E1229] mt-1">
 
                                 Champagne Dream
 
@@ -650,13 +647,13 @@
 
                             <div class="flex items-center justify-between mt-5">
 
-                                <span class="font-semibold text-[#5C1A2B]">
+                                <span class="font-semibold text-[#5E1229]">
 
                                     ₱2,500
 
                                 </span>
 
-                                <a href="{{ route('register') }}" class="text-sm font-semibold text-[#8B3F52]">
+                                <a href="{{ route('register') }}" class="text-sm font-semibold text-[#9A7633]">
 
                                     Reserve Now
 
@@ -674,13 +671,13 @@
 
                     <article class="scroll-item gown-card bg-white rounded-2xl overflow-hidden card-shadow">
 
-                        <div class="relative h-[360px] overflow-hidden bg-[#EADCCB]">
+                        <div class="relative h-[360px] overflow-hidden bg-[#E0CB9C]">
 
                             <img src="https://www.thewildflowershop.com/cdn/shop/files/Pamela_in_Red-13_620x.jpg?v=1742131736"
                                 alt="Scarlet Elegance gown" class="gown-image w-full h-full object-cover">
 
                             <span
-                                class="absolute top-4 left-4 bg-white/90 text-[#5C1A2B] text-xs font-semibold px-3 py-1.5 rounded-full">
+                                class="absolute top-4 left-4 bg-white/90 text-[#5E1229] text-xs font-semibold px-3 py-1.5 rounded-full">
 
                                 Popular
 
@@ -691,13 +688,13 @@
 
                         <div class="p-5">
 
-                            <p class="text-xs uppercase tracking-wider text-[#8B6F61]">
+                            <p class="text-xs uppercase tracking-wider text-[#7A6440]">
 
                                 Evening Gown
 
                             </p>
 
-                            <h3 class="font-display text-2xl text-[#5C1A2B] mt-1">
+                            <h3 class="font-display text-2xl text-[#5E1229] mt-1">
 
                                 Scarlet Elegance
 
@@ -705,13 +702,13 @@
 
                             <div class="flex items-center justify-between mt-5">
 
-                                <span class="font-semibold text-[#5C1A2B]">
+                                <span class="font-semibold text-[#5E1229]">
 
                                     ₱2,800
 
                                 </span>
 
-                                <a href="{{ route('register') }}" class="text-sm font-semibold text-[#8B3F52]">
+                                <a href="{{ route('register') }}" class="text-sm font-semibold text-[#9A7633]">
 
                                     Reserve Now
 
@@ -729,13 +726,13 @@
 
                     <article class="scroll-item gown-card bg-white rounded-2xl overflow-hidden card-shadow">
 
-                        <div class="relative h-[360px] overflow-hidden bg-[#EADCCB]">
+                        <div class="relative h-[360px] overflow-hidden bg-[#E0CB9C]">
 
                             <img src="https://theortensia.com/cdn/shop/files/Copy_of_Copy_of_New_Ecom_1_6.png?v=1770473673&width=1920"
                                 alt="Rosé Bloom gown" class="gown-image w-full h-full object-cover">
 
                             <span
-                                class="absolute top-4 left-4 bg-white/90 text-[#5C1A2B] text-xs font-semibold px-3 py-1.5 rounded-full">
+                                class="absolute top-4 left-4 bg-white/90 text-[#5E1229] text-xs font-semibold px-3 py-1.5 rounded-full">
 
                                 New
 
@@ -746,13 +743,13 @@
 
                         <div class="p-5">
 
-                            <p class="text-xs uppercase tracking-wider text-[#8B6F61]">
+                            <p class="text-xs uppercase tracking-wider text-[#7A6440]">
 
                                 Debut Gown
 
                             </p>
 
-                            <h3 class="font-display text-2xl text-[#5C1A2B] mt-1">
+                            <h3 class="font-display text-2xl text-[#5E1229] mt-1">
 
                                 Rosé Bloom
 
@@ -760,13 +757,13 @@
 
                             <div class="flex items-center justify-between mt-5">
 
-                                <span class="font-semibold text-[#5C1A2B]">
+                                <span class="font-semibold text-[#5E1229]">
 
                                     ₱2,600
 
                                 </span>
 
-                                <a href="{{ route('register') }}" class="text-sm font-semibold text-[#8B3F52]">
+                                <a href="{{ route('register') }}" class="text-sm font-semibold text-[#9A7633]">
 
                                     Reserve Now
 
@@ -784,13 +781,13 @@
 
                     <article class="scroll-item gown-card bg-white rounded-2xl overflow-hidden card-shadow">
 
-                        <div class="relative h-[360px] overflow-hidden bg-[#EADCCB]">
+                        <div class="relative h-[360px] overflow-hidden bg-[#E0CB9C]">
 
                             <img src="https://www.chicwish.com/media/catalog/product/cache/a87871bafb3bfd9c132042a6843aa84f/2/5/250821cc216.jpg"
                                 alt="Midnight Grace gown" class="gown-image w-full h-full object-cover">
 
                             <span
-                                class="absolute top-4 left-4 bg-white/90 text-[#5C1A2B] text-xs font-semibold px-3 py-1.5 rounded-full">
+                                class="absolute top-4 left-4 bg-white/90 text-[#5E1229] text-xs font-semibold px-3 py-1.5 rounded-full">
 
                                 Elegant
 
@@ -801,13 +798,13 @@
 
                         <div class="p-5">
 
-                            <p class="text-xs uppercase tracking-wider text-[#8B6F61]">
+                            <p class="text-xs uppercase tracking-wider text-[#7A6440]">
 
                                 Formal Gown
 
                             </p>
 
-                            <h3 class="font-display text-2xl text-[#5C1A2B] mt-1">
+                            <h3 class="font-display text-2xl text-[#5E1229] mt-1">
 
                                 Midnight Grace
 
@@ -815,13 +812,13 @@
 
                             <div class="flex items-center justify-between mt-5">
 
-                                <span class="font-semibold text-[#5C1A2B]">
+                                <span class="font-semibold text-[#5E1229]">
 
                                     ₱2,700
 
                                 </span>
 
-                                <a href="{{ route('register') }}" class="text-sm font-semibold text-[#8B3F52]">
+                                <a href="{{ route('register') }}" class="text-sm font-semibold text-[#9A7633]">
 
                                     Reserve Now
 
@@ -843,26 +840,26 @@
 
         <!-- HOW IT WORKS -->
 
-        <section id="how-it-works" class="scroll-reveal bg-[#ECDCC5] py-24">
+        <section id="how-it-works" class="scroll-reveal bg-[#E3CE9E] py-24">
 
             <div class="max-w-7xl mx-auto px-6 lg:px-10">
 
 
                 <div class="text-center max-w-2xl mx-auto mb-14">
 
-                    <p class="text-xs tracking-[0.25em] uppercase text-[#8B3F52] font-semibold mb-3">
+                    <p class="text-xs tracking-[0.25em] uppercase text-[#9A7633] font-semibold mb-3">
 
                         Simple & Convenient
 
                     </p>
 
-                    <h2 class="font-display text-4xl sm:text-5xl text-[#5C1A2B]">
+                    <h2 class="font-display text-4xl sm:text-5xl text-[#5E1229]">
 
                         How It Works
 
                     </h2>
 
-                    <p class="mt-4 text-[#6B625D] leading-7">
+                    <p class="mt-4 text-[#6B5B45] leading-7">
 
                         Reserving your dream gown is simple.
                         Follow these three easy steps.
@@ -878,22 +875,22 @@
 
                     <!-- STEP 1 -->
 
-                    <div class="bg-[#F7EFE4]/70 rounded-2xl p-8 text-center">
+                    <div class="bg-[#F0E1BE]/70 rounded-2xl p-8 text-center">
 
                         <div
-                            class="w-16 h-16 mx-auto rounded-full bg-[#5C1A2B] text-white flex items-center justify-center font-display text-2xl">
+                            class="w-16 h-16 mx-auto rounded-full bg-[#5E1229] text-white flex items-center justify-center font-display text-2xl">
 
                             01
 
                         </div>
 
-                        <h3 class="font-display text-2xl text-[#5C1A2B] mt-6">
+                        <h3 class="font-display text-2xl text-[#5E1229] mt-6">
 
                             Browse
 
                         </h3>
 
-                        <p class="mt-3 text-[#6B625D] leading-7">
+                        <p class="mt-3 text-[#6B5B45] leading-7">
 
                             Explore our available gowns and formal wear
                             and find the style that fits your occasion.
@@ -906,22 +903,22 @@
 
                     <!-- STEP 2 -->
 
-                    <div class="bg-[#F7EFE4]/70 rounded-2xl p-8 text-center">
+                    <div class="bg-[#F0E1BE]/70 rounded-2xl p-8 text-center">
 
                         <div
-                            class="w-16 h-16 mx-auto rounded-full bg-[#5C1A2B] text-white flex items-center justify-center font-display text-2xl">
+                            class="w-16 h-16 mx-auto rounded-full bg-[#5E1229] text-white flex items-center justify-center font-display text-2xl">
 
                             02
 
                         </div>
 
-                        <h3 class="font-display text-2xl text-[#5C1A2B] mt-6">
+                        <h3 class="font-display text-2xl text-[#5E1229] mt-6">
 
                             Reserve
 
                         </h3>
 
-                        <p class="mt-3 text-[#6B625D] leading-7">
+                        <p class="mt-3 text-[#6B5B45] leading-7">
 
                             Select your preferred gown, choose your schedule,
                             and submit your reservation request.
@@ -934,22 +931,22 @@
 
                     <!-- STEP 3 -->
 
-                    <div class="bg-[#F7EFE4]/70 rounded-2xl p-8 text-center">
+                    <div class="bg-[#F0E1BE]/70 rounded-2xl p-8 text-center">
 
                         <div
-                            class="w-16 h-16 mx-auto rounded-full bg-[#5C1A2B] text-white flex items-center justify-center font-display text-2xl">
+                            class="w-16 h-16 mx-auto rounded-full bg-[#5E1229] text-white flex items-center justify-center font-display text-2xl">
 
                             03
 
                         </div>
 
-                        <h3 class="font-display text-2xl text-[#5C1A2B] mt-6">
+                        <h3 class="font-display text-2xl text-[#5E1229] mt-6">
 
                             Enjoy
 
                         </h3>
 
-                        <p class="mt-3 text-[#6B625D] leading-7">
+                        <p class="mt-3 text-[#6B5B45] leading-7">
 
                             Get your reservation confirmed and enjoy
                             your special event in your chosen gown.
@@ -968,7 +965,7 @@
 
         <!-- ABOUT US -->
 
-        <section id="about" class="scroll-reveal bg-[#F7EFE4] py-24">
+        <section id="about" class="scroll-reveal bg-[#F0E1BE] py-24">
 
             <div class="max-w-7xl mx-auto px-6 lg:px-10">
 
@@ -977,13 +974,13 @@
 
                     <div>
 
-                        <p class="text-xs tracking-[0.25em] uppercase text-[#8B3F52] font-semibold mb-3">
+                        <p class="text-xs tracking-[0.25em] uppercase text-[#9A7633] font-semibold mb-3">
 
                             About Shyra Beautique
 
                         </p>
 
-                        <h2 class="font-display text-4xl sm:text-5xl text-[#5C1A2B] leading-tight">
+                        <h2 class="font-display text-4xl sm:text-5xl text-[#5E1229] leading-tight">
 
                             Making Every Occasion
 
@@ -993,7 +990,7 @@
 
                         </h2>
 
-                        <p class="mt-6 text-[#6B625D] leading-8">
+                        <p class="mt-6 text-[#6B5B45] leading-8">
 
                             Shyra Beautique is a formal wear rental business
                             located in Bankerohan, Barangay 5-A, Poblacion District,
@@ -1003,7 +1000,7 @@
 
                         </p>
 
-                        <p class="mt-4 text-[#6B625D] leading-8">
+                        <p class="mt-4 text-[#6B5B45] leading-8">
 
                             Our goal is to make the gown rental experience
                             easier and more convenient by providing customers
@@ -1013,7 +1010,7 @@
                         </p>
 
                         <a href="{{ route('register') }}"
-                            class="inline-flex mt-8 items-center justify-center px-7 py-3.5 rounded-full bg-[#5C1A2B] text-white font-semibold luxury-button">
+                            class="inline-flex mt-8 items-center justify-center px-7 py-3.5 rounded-full bg-[#5E1229] text-white font-semibold luxury-button">
 
                             Start Your Reservation
 
@@ -1024,7 +1021,7 @@
 
                     <div>
 
-                        <div class="rounded-3xl overflow-hidden soft-glow bg-[#EADCCB]">
+                        <div class="rounded-3xl overflow-hidden soft-glow bg-[#E0CB9C]">
 
                             <img src="{{ asset('images/image.webp') }}" alt="Shyra Beautique formal wear"
                                 class="w-full h-[500px] object-cover">
@@ -1043,11 +1040,11 @@
 
         <!-- CTA -->
 
-        <section id="contact" class="bg-[#5C1A2B] py-20">
+        <section id="contact" class="bg-[#5E1229] py-20">
 
             <div class="max-w-5xl mx-auto px-6 text-center">
 
-                <p class="text-xs tracking-[0.25em] uppercase text-[#EADCCB] font-semibold mb-4">
+                <p class="text-xs tracking-[0.25em] uppercase text-[#E0CB9C] font-semibold mb-4">
 
                     Your Special Occasion Awaits
 
@@ -1063,7 +1060,7 @@
 
                 </h2>
 
-                <p class="mt-5 max-w-2xl mx-auto text-[#EADCCB] leading-7">
+                <p class="mt-5 max-w-2xl mx-auto text-[#E0CB9C] leading-7">
 
                     Browse our collection and reserve your favorite
                     gown for your next unforgettable event.
@@ -1073,7 +1070,7 @@
                 <div class="mt-8">
 
                     <a href="{{ route('register') }}"
-                        class="inline-flex items-center justify-center px-8 py-4 rounded-full bg-[#F7EFE4] text-[#5C1A2B] font-semibold luxury-button">
+                        class="inline-flex items-center justify-center px-8 py-4 rounded-full bg-[#F0E1BE] text-[#5E1229] font-semibold luxury-button">
 
                         Create Your Account
 
@@ -1091,7 +1088,7 @@
 
     <!-- FOOTER -->
 
-    <footer class="bg-[#3D1420] text-[#EADCCB]">
+    <footer class="bg-[#450E20] text-[#E0CB9C]">
 
         <div class="max-w-7xl mx-auto px-6 lg:px-10 py-14">
 
@@ -1106,7 +1103,7 @@
 
                     </div>
 
-                    <p class="mt-4 text-sm leading-7 text-[#D8C7B8] max-w-sm">
+                    <p class="mt-4 text-sm leading-7 text-[#C9A961] max-w-sm">
 
                         Elegant gowns and formal wear for
                         your most memorable occasions.
@@ -1176,7 +1173,7 @@
             </div>
 
 
-            <div class="mt-12 pt-6 border-t border-white/10 text-center text-xs text-[#C8B4A6]">
+            <div class="mt-12 pt-6 border-t border-white/10 text-center text-xs text-[#B08D48]">
 
                 © {{ date('Y') }} Shyra Beautique.
                 All rights reserved.

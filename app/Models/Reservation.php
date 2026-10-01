@@ -35,6 +35,10 @@ class Reservation extends Model
         'id_safe_slot',
         'agreement_accepted_at',
         'collateral_status',
+        'cancelled_by',
+        'cancelled_at',
+        'cancellation_reason',
+        'cancellation_refund_amount',
     ];
 
     protected $casts = [
@@ -48,6 +52,8 @@ class Reservation extends Model
         'amount_paid' => 'decimal:2',
         'balance' => 'decimal:2',
         'agreement_accepted_at' => 'datetime',
+        'cancelled_at' => 'datetime',
+        'cancellation_refund_amount' => 'decimal:2',
         'event_date' => 'date',
     ];
 
@@ -59,6 +65,11 @@ class Reservation extends Model
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function cancelledBy()
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
     }
 
     public function items()
