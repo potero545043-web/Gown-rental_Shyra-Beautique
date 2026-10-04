@@ -1,3 +1,7 @@
+@php
+    $filtering = request()->filled('q') || request()->filled('status');
+@endphp
+
 <x-app-layout>
     <div class="sb-page">
         <div class="sb-wrap">
@@ -6,6 +10,8 @@
                     <h1>Reservation <em>desk.</em></h1>
                     <p>Review guest requests, update gown handoffs, and record payments.</p>
                 </div>
+                {{-- Add reservation: pick a gown in the catalog, then reserve for the walk-in customer --}}
+                <a class="sb-btn" href="{{ route($base . '.catalog') }}">Add reservation +</a>
             </div>
 
             @if($errors->any())
@@ -32,6 +38,9 @@
                     </optgroup>
                 </select>
                 <button class="sb-btn" type="submit">Filter</button>
+                @if($filtering)
+                    <a class="sb-filter-clear" href="{{ route($base . '.reservations') }}">Clear</a>
+                @endif
             </form>
 
             <section class="sb-panel sb-reservations-panel">
@@ -89,7 +98,8 @@
                                         <details class="sb-row-actions">
                                             <summary aria-label="Manage reservation">Manage</summary>
                                             <div class="sb-row-actions-panel">
-                                                @if($reservation->customer)
+                                                {{-- customers.show exists for the owner only --}}
+                                                @if($reservation->customer && $base === 'owner')
                                                     <a class="sb-small-btn"
                                                         href="{{ route($base . '.customers.show', $reservation->customer) }}">View
                                                         Reservation History</a>
@@ -151,8 +161,19 @@
                             @empty
                                 <tr>
                                     <td colspan="7" class="sb-empty sb-empty-state">
-                                        <strong>No reservations yet</strong>
-                                        <small>Customer booking requests will appear here for review.</small>
+                                        <div class="sb-res-empty">
+                                            <span class="sb-res-empty-icon">◷</span>
+                                            @if($filtering)
+                                                <strong>No reservations match your filters</strong>
+                                                <small>Try a different search or status.</small>
+                                                <a class="sb-res-empty-link" href="{{ route($base . '.reservations') }}">Clear
+                                                    filters</a>
+                                            @else
+                                                <strong>No reservations yet</strong>
+                                                <small>Customer booking requests will appear here for review.</small>
+                                                <a class="sb-btn" href="{{ route($base . '.catalog') }}">Browse catalog</a>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @endforelse
@@ -164,4 +185,61 @@
             <div class="sb-pagination">{{ $reservations->links() }}</div>
         </div>
     </div>
+
+    <style>
+        .sb-filterbar {
+            align-items: center;
+        }
+
+        .sb-filterbar input,
+        .sb-filterbar select {
+            border: 1px solid #d9b8a0;
+            background: #fffaf5;
+        }
+
+        .sb-filter-clear {
+            color: #6d1935;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: underline;
+            white-space: nowrap;
+        }
+
+        .sb-res-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 26px 12px;
+        }
+
+        .sb-res-empty-icon {
+            display: grid;
+            place-items: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #5e0f27;
+            color: #fbe9d0;
+            font-size: 18px;
+        }
+
+        .sb-res-empty strong {
+            font-size: 15px;
+        }
+
+        .sb-res-empty small {
+            max-width: 340px;
+        }
+
+        .sb-res-empty .sb-btn {
+            margin-top: 6px;
+        }
+
+        .sb-res-empty-link {
+            color: #6d1935;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+    </style>
 </x-app-layout>

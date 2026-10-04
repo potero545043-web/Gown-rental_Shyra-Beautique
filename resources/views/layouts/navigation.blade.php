@@ -1,9 +1,15 @@
 @php
     $role = auth()->user()->role;
-    $dashboard = ['owner' => 'owner.dashboard', 'employee' => 'employee.dashboard', 'customer' => 'customer.dashboard'][$role] ?? 'login';
 
-    // Navigation is grouped into sections so the sidebar shows a hierarchy
-    // instead of a flat list of equally-weighted destinations.
+    $dashboard = [
+        'owner' => 'owner.dashboard',
+        'employee' => 'employee.dashboard',
+        'customer' => 'customer.dashboard',
+    ][$role] ?? 'login';
+
+    // Sidebar sections: [label, route name, icon].
+    // Every route listed here MUST exist in routes/web.php for that role,
+    // otherwise the page crashes with "Route [...] not defined".
     $sections = match ($role) {
         'owner' => [
             'OPERATIONS' => [
@@ -22,6 +28,8 @@
                 ['Settings', 'owner.settings', 'tag'],
             ],
         ],
+
+        // Employee: no Customers, no Maintenance (owner only).
         'employee' => [
             'OPERATIONS' => [
                 ['Overview', 'employee.dashboard', 'grid'],
@@ -30,11 +38,10 @@
             ],
             'BUSINESS' => [
                 ['Gown catalog', 'employee.catalog', 'dress'],
-                ['Maintenance', 'employee.maintenance', 'spark'],
-                ['Customers', 'employee.customers', 'users'],
                 ['Payments', 'employee.payments', 'card'],
             ],
         ],
+
         default => [
             'MY ACCOUNT' => [
                 ['Dashboard', 'customer.dashboard', 'grid'],
@@ -43,14 +50,23 @@
             ],
         ],
     };
-    $isActive = fn($routeName) => request()->routeIs($routeName)
-        || ($routeName === 'owner.catalog' && request()->routeIs('owner.catalog.*'))
-        || ($routeName === 'owner.gowns.index' && request()->routeIs('owner.gowns.*'))
-        || ($routeName === 'owner.categories.index' && request()->routeIs('owner.categories.*'))
-        || ($routeName === 'owner.accessories.index' && request()->routeIs('owner.accessories.*'))
-        ? 'is-active'
-        : '';
+
+    // Active state: exact route, or any child route of a catalog / inventory page.
+    $isActive = function ($routeName) {
+        $active = request()->routeIs($routeName)
+            || (str_ends_with($routeName, '.catalog') && request()->routeIs($routeName . '.*'))
+            || ($routeName === 'owner.gowns.index' && request()->routeIs('owner.gowns.*'))
+            || ($routeName === 'owner.categories.index' && request()->routeIs('owner.categories.*'))
+            || ($routeName === 'owner.accessories.index' && request()->routeIs('owner.accessories.*'));
+
+        return $active ? 'is-active' : '';
+    };
+
+    $inventoryRoutes = ['owner.gowns.*', 'owner.categories.*', 'owner.accessories.*', 'owner.maintenance'];
+    $hasPending = $role !== 'customer' && \App\Models\Reservation::where('status', 'pending')->exists();
 @endphp
+
+{{-- ICON LIBRARY --}}
 <svg class="sb-icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <symbol id="sb-i-grid" viewBox="0 0 24 24">
         <rect x="3" y="3" width="7" height="7" rx="1.5" />
@@ -97,7 +113,10 @@
         <path d="M10 17l5-5-5-5m5 5H3m10-9h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" />
     </symbol>
 </svg>
+
 <aside class="sb-sidebar" :class="sidebarOpen ? 'sb-sidebar-open' : ''">
+
+    {{-- BRAND --}}
     <a class="sb-brand sb-sidebar-brand" href="{{ route($dashboard) }}">
         <span class="sb-logo-avatar">
             <img src="{{ asset('images/Logo.png') }}" alt="Shyra Beautique" class="sb-sidebar-logo">
@@ -107,26 +126,35 @@
             <small>GOWN RENTAL STUDIO</small>
         </span>
     </a>
+
+    {{-- SECTIONS --}}
     @foreach($sections as $sectionLabel => $sectionLinks)
         <div class="sb-sidebar-caption">{{ $sectionLabel }}</div>
+
         <nav class="sb-side-links">
             @foreach($sectionLinks as [$label, $routeName, $icon])
                 <a class="sb-side-link {{ $isActive($routeName) }}" href="{{ route($routeName) }}">
                     <svg>
                         <use href="#sb-i-{{ $icon }}" />
-                    </svg><span>{{ $label }}</span>
-                    @if($label === 'Reservations' && $role !== 'customer' && \App\Models\Reservation::where('status', 'pending')->exists())<i
-                    class="sb-side-dot"></i>@endif
+                    </svg>
+                    <span>{{ $label }}</span>
+                    @if($label === 'Reservations' && $hasPending)
+                        <i class="sb-side-dot"></i>
+                    @endif
                 </a>
             @endforeach
+
+            {{-- Inventory dropdown (owner only) --}}
             @if($role === 'owner' && $sectionLabel === 'BUSINESS')
-                <details class="sb-inventory-nav" {{ request()->routeIs('owner.gowns.*', 'owner.categories.*', 'owner.accessories.*', 'owner.maintenance') ? 'open' : '' }}>
-                    <summary
-                        class="sb-side-link {{ request()->routeIs('owner.gowns.*', 'owner.categories.*', 'owner.accessories.*', 'owner.maintenance') ? 'is-active' : '' }}">
+                <details class="sb-inventory-nav" {{ request()->routeIs(...$inventoryRoutes) ? 'open' : '' }}>
+                    <summary class="sb-side-link {{ request()->routeIs(...$inventoryRoutes) ? 'is-active' : '' }}">
                         <svg>
                             <use href="#sb-i-dress" />
-                        </svg><span>Inventory</span><span class="sb-inventory-chevron">⌄</span>
+                        </svg>
+                        <span>Inventory</span>
+                        <span class="sb-inventory-chevron">⌄</span>
                     </summary>
+
                     <div class="sb-inventory-subnav">
                         <a class="{{ request()->routeIs('owner.gowns.*') ? 'is-active' : '' }}"
                             href="{{ route('owner.gowns.index') }}">Gowns</a>
@@ -141,21 +169,35 @@
             @endif
         </nav>
     @endforeach
+
+    {{-- BOTTOM: profile + user --}}
     <div class="sb-sidebar-bottom">
         <a class="sb-side-link {{ request()->routeIs('profile.edit') ? 'is-active' : '' }}"
-            href="{{ route('profile.edit') }}"><svg>
+            href="{{ route('profile.edit') }}">
+            <svg>
                 <use href="#sb-i-user" />
-            </svg><span>My profile</span></a>
-        <div class="sb-side-user"><span
-                class="sb-side-avatar">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span><span
-                class="sb-side-user-copy"><b>{{ auth()->user()->name }}</b><small>{{ ucfirst($role) }}
-                    account</small></span>
-            <form method="POST" action="{{ route('logout') }}">@csrf<button class="sb-logout" title="Sign out"
-                    aria-label="Sign out"><svg>
+            </svg>
+            <span>My profile</span>
+        </a>
+
+        <div class="sb-side-user">
+            <span class="sb-side-avatar">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>
+            <span class="sb-side-user-copy">
+                <b>{{ auth()->user()->name }}</b>
+                <small>{{ ucfirst($role) }} account</small>
+            </span>
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button class="sb-logout" title="Sign out" aria-label="Sign out">
+                    <svg>
                         <use href="#sb-i-logout" />
-                    </svg></button></form>
+                    </svg>
+                </button>
+            </form>
         </div>
     </div>
 </aside>
+
 <button class="sb-sidebar-scrim" x-show="sidebarOpen" x-transition.opacity @click="sidebarOpen=false"
-    aria-label="Close navigation"></button>
+    aria-label="Close navigation">
+</button>

@@ -30,6 +30,8 @@
             </main>
         </div>
     </div>
+
+    @include('layouts.logout-confirm')
 </body>
 
 </html>

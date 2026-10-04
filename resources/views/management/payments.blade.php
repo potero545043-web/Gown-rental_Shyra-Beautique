@@ -3,48 +3,27 @@
     <div class="sb-page">
         <div class="sb-wrap">
 
-            {{-- =========================
-            PAGE HEADER
-            ========================== --}}
             <div class="sb-heading">
-
                 <div>
                     <h1>Payment <em>records.</em></h1>
-
-                    <p>
-                        Verify customer receipts and track recorded rental payments.
-                    </p>
+                    <p>Verify customer receipts and track recorded rental payments.</p>
                 </div>
-
             </div>
 
-
-            {{-- =========================
-            SUCCESS MESSAGE
-            ========================== --}}
             @if(session('success'))
-                <div class="sb-success">
-                    {{ session('success') }}
-                </div>
+                <div class="sb-success">{{ session('success') }}</div>
             @endif
 
-
-            {{-- =========================
-            ERROR MESSAGE
-            ========================== --}}
             @if($errors->any())
-                <div class="sb-form-errors">
-                    {{ $errors->first() }}
-                </div>
+                <div class="sb-form-errors">{{ $errors->first() }}</div>
             @endif
-
 
             <div class="sb-payment-toolbar">
                 <form class="sb-payment-filters" method="GET" action="{{ route($base . '.payments') }}">
                     <label class="sb-payment-search">
                         <span class="sb-visually-hidden">Search payments</span>
                         <input type="search" name="q" value="{{ $filters['q'] ?? '' }}"
-                            placeholder="Search payment, customer, or reservation">
+                            placeholder="Search payments">
                     </label>
                     <label>
                         <span class="sb-visually-hidden">Filter by status</span>
@@ -87,12 +66,11 @@
             @endif
 
             <div class="sb-payment-stats" aria-label="Payment summary">
-                <div><span>Total</span><strong>₱{{ number_format($totalAmount, 2) }}</strong><small>{{ $totalCount }}
-                        transaction{{ $totalCount === 1 ? '' : 's' }}</small></div>
+                <div><span>Outstanding balance</span><strong>₱{{ number_format($openReservations->sum('balance'), 2) }}</strong><small>{{ $openReservations->count() }}
+                        open reservation{{ $openReservations->count() === 1 ? '' : 's' }}</small></div>
                 <div><span>Verified</span><strong>₱{{ number_format($verifiedAmount, 2) }}</strong><small>{{ $verifiedCount }}
                         transaction{{ $verifiedCount === 1 ? '' : 's' }}</small></div>
-                <div><span>Needs
-                        review</span><strong>₱{{ number_format($reviewAmount, 2) }}</strong><small>{{ $reviewCount }}
+                <div><span>Needs review</span><strong>₱{{ number_format($reviewAmount, 2) }}</strong><small>{{ $reviewCount }}
                         transaction{{ $reviewCount === 1 ? '' : 's' }}</small></div>
             </div>
 
@@ -292,13 +270,18 @@
                     const recordForm = recordDialog.querySelector('[data-record-payment-form]');
                     const reservationSelect = recordDialog.querySelector('[data-record-reservation]');
                     const amountField = recordDialog.querySelector('[data-record-amount]');
+                    const typeField = recordDialog.querySelector('[name="payment_type"]');
                     const updateRecordAction = () => {
                         const selected = reservationSelect?.selectedOptions[0];
                         if (!selected) return;
                         recordForm.action = selected.dataset.action;
                         amountField.max = selected.dataset.balance;
+                        if (Number(selected.dataset.balance) <= 500) typeField.value = 'rental_balance';
                     };
                     reservationSelect?.addEventListener('change', updateRecordAction);
+                    amountField?.addEventListener('input', () => {
+                        if (amountField.max && Number(amountField.value) >= Number(amountField.max)) typeField.value = 'rental_balance';
+                    });
                     updateRecordAction();
                     document.querySelector('[data-open-record-payment]').addEventListener('click', () => recordDialog.showModal());
                     recordDialog.querySelectorAll('[data-close-record-payment]').forEach(button => button.addEventListener('click', () => recordDialog.close()));
@@ -310,6 +293,5 @@
 
         </div>
     </div>
-
 
 </x-app-layout>

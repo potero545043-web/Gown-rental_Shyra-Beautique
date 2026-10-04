@@ -14,20 +14,23 @@ class GownController extends Controller
     public function index(Request $request)
     {
         $query = Gown::with(['category', 'accessories'])->withCount([
-            'reservationItems as bookings_count' => fn ($items) => $items->whereHas(
+            'reservationItems as bookings_count' => fn($items) => $items->whereHas(
                 'reservation',
-                fn ($reservations) => $reservations->whereNotIn('status', ['cancelled', 'rejected'])
+                fn($reservations) => $reservations->whereNotIn('status', ['cancelled', 'rejected'])
             ),
         ])->latest();
         if ($request->filled('q')) {
             $term = $request->string('q');
-            $query->where(fn ($builder) => $builder->where('name', 'like', "%$term%")
+            $query->where(fn($builder) => $builder->where('name', 'like', "%$term%")
                 ->orWhere('gown_code', 'like', "%$term%")
                 ->orWhere('color', 'like', "%$term%"));
         }
-        if ($request->filled('category')) $query->where('category_id', $request->integer('category'));
-        if ($request->filled('status')) $query->where('status', $request->string('status'));
-        if ($request->filled('condition')) $query->where('condition', $request->string('condition'));
+        if ($request->filled('category'))
+            $query->where('category_id', $request->integer('category'));
+        if ($request->filled('status'))
+            $query->where('status', $request->string('status'));
+        if ($request->filled('condition'))
+            $query->where('condition', $request->string('condition'));
         $gowns = $query->paginate(15)->withQueryString();
         $categories = Category::where('is_active', true)->orderBy('name')->get();
         $accessories = Accessory::where('status', 'available')->orderBy('name')->get();
@@ -196,7 +199,7 @@ class GownController extends Controller
 
         $validated['security_deposit'] = 0;
         $gown = Gown::create($validated);
-        $gown->accessories()->sync(collect($accessoryIds)->mapWithKeys(fn ($id) => [$id => ['quantity' => 1]])->all());
+        $gown->accessories()->sync(collect($accessoryIds)->mapWithKeys(fn($id) => [$id => ['quantity' => 1]])->all());
 
 
         return redirect()
@@ -225,18 +228,18 @@ class GownController extends Controller
 
     public function edit(Gown $gown)
     {
-        $categories = Category::where('is_active', true)->orWhereKey($gown->category_id)
-            ->orderBy('name')
+        $categories = Category::where(fn($q) => $q->where('is_active', true)->orWhere('id', $gown->category_id))
             ->get();
 
         $accessories = Accessory::where('status', 'available')
-            ->orWhereHas('gowns', fn ($query) => $query->where('gowns.id', $gown->id))
+            ->orWhereHas('gowns', fn($query) => $query->where('gowns.id', $gown->id))
             ->orderBy('name')->get();
         return view(
             'gowns.edit',
             compact(
                 'gown',
-                'categories', 'accessories'
+                'categories',
+                'accessories'
             )
         );
     }
@@ -365,7 +368,7 @@ class GownController extends Controller
 
         $validated['security_deposit'] = 0;
         $gown->update($validated);
-        $gown->accessories()->sync(collect($accessoryIds)->mapWithKeys(fn ($id) => [$id => ['quantity' => 1]])->all());
+        $gown->accessories()->sync(collect($accessoryIds)->mapWithKeys(fn($id) => [$id => ['quantity' => 1]])->all());
 
 
         return redirect()

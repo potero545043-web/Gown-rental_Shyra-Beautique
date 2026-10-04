@@ -1,74 +1,72 @@
 /* =========================================================
-   GOLD PALETTE OVERRIDE
-   ------------------------------------------------------------
-   Replaces the washed-out warm cream / ivory surfaces with a
-   richer antique-gold scheme, and lifts the veil over the hero
-   image so the red gown reads as red instead of muddy brown.
-
-   Placed last in the file so it wins on source order without
-   needing !important over the earlier component rules.
+   SHYRA BEAUTIQUE PALETTE: ivory + burgundy + gold accent
    ========================================================= */
 
 :root {
-    /* --- surfaces: warm antique gold, not grey-cream --- */
-    --paper: #f4e9d4;
-    --gold: #a8813a;
-    --gold-soft: #c9a961;
-    --gold-deep: #7d5f24;
-    --cream: #f9f0de;
+    --sb-page: #fbf8f2;
+    --sb-card: #ffffff;
+    --sb-soft: #f8f1e2;
+    --sb-line: #ece3cf;
+    --sb-line-strong: #e3d6b8;
 
-    /* --- text / contrast --- */
-    --ink: #3a2c1a;
-    --muted: #6f5c40;
-    --burgundy: #6d1935;
-    --burgundy-deep: #4e1126;
+    --sb-gold: #b08a3e;
+    --sb-gold-soft: #c9a961;
+    --sb-gold-deep: #7d5f24;
+    --sb-gold-tint: #f6ecd6;
+
+    --sb-burgundy: #6d1935;
+    --sb-burgundy-deep: #4e1126;
+    --sb-burgundy-tint: #f6e9ee;
+
+    --sb-ink: #3a2c1a;
+    --sb-muted: #7a6642;
+
+    --paper: var(--sb-page);
+    --gold: var(--sb-gold);
+    --gold-soft: var(--sb-gold-soft);
+    --gold-deep: var(--sb-gold-deep);
+    --cream: var(--sb-card);
+    --ink: var(--sb-ink);
+    --muted: var(--sb-muted);
+    --burgundy: var(--sb-burgundy);
+    --burgundy-deep: var(--sb-burgundy-deep);
 }
-
-/* ---------- app shell ---------- */
 
 body,
-.sb-app-shell {
-    background: #f4e9d4;
-    color: #3a2c1a;
-}
+.sb-app-shell { background: var(--sb-page); color: var(--sb-ink); }
 
 .sb-page {
     background:
-        radial-gradient(ellipse at 93% 0%, #e8d6ae 0, transparent 30%),
-        radial-gradient(ellipse at 5% 8%, #f7eeda 0, transparent 26%), #f4e9d4;
+        radial-gradient(ellipse at 93% 0%, #f3e8cf 0, transparent 28%),
+        var(--sb-page);
 }
-
-/* ---------- panels & cards: keep them light so text stays legible ---------- */
 
 .sb-panel,
 .sb-stat,
 .sb-product,
-.sb-payment-transactions {
-    background: #fdf8ec;
-    border-color: #d9c397;
-    box-shadow:
-        0 6px 20px rgba(94, 66, 22, 0.09),
-        inset 0 1px 0 rgba(255, 253, 245, 0.9);
+.sb-payment-transactions,
+.sb-settings-card,
+.sb-recent-booking,
+.sb-auth-card,
+.sb-payment-stats > div,
+.sb-pagination .page-link,
+.sb-pagination .page-item > span {
+    background: var(--sb-card);
+    border-color: var(--sb-line);
+    box-shadow: 0 4px 16px rgba(60, 40, 15, 0.06);
 }
 
-.sb-stat i {
-    background: linear-gradient(140deg, #c9a961, #a8813a);
-    color: #fffaf0;
-}
-
+.sb-stat i { background: var(--sb-gold-tint); color: var(--sb-gold); }
 .sb-stat-gold i {
-    background: linear-gradient(140deg, #8b2f48, #6d1935);
+    background: linear-gradient(140deg, #8b2f48, var(--sb-burgundy));
     color: #fbe9d0;
 }
-
-/* ---------- typography ---------- */
 
 .sb-heading h1,
 .sb-customer-hero h1,
 .sb-auth-intro h1,
-.sb-home-hero h1 {
-    color: #4e1126;
-}
+.sb-home-hero h1,
+.sb-payment-transactions-head h2 { color: var(--sb-burgundy); }
 
 .sb-heading h1 em,
 .sb-customer-hero h1 em,
@@ -76,30 +74,21 @@ body,
 .sb-experience-copy h2 em,
 .sb-home-about h2 em,
 .sb-home-cta h2 em,
-.sb-home-section-head h2 em {
-    color: #a8813a;
-}
+.sb-home-section-head h2 em { color: var(--sb-gold); }
 
 .sb-heading p,
-.sb-customer-hero p {
-    color: #6f5c40;
-}
+.sb-customer-hero p,
+.sb-home-hero-copy > p { color: var(--sb-muted); }
 
-.sb-kicker {
-    color: #a8813a;
-}
-
-.sb-kicker::before {
-    background: #a8813a;
-}
-
-/* ---------- primary actions stay burgundy ---------- */
+.sb-kicker { color: var(--sb-gold); }
+.sb-kicker::before { background: var(--sb-gold); }
 
 .sb-btn,
 .sb-auth-submit,
 .sb-home-signup,
 .sb-reserve-banner,
-.sb-home-cta {
+.sb-home-cta,
+.sb-payment-add-button {
     background: linear-gradient(180deg, #7d1c39, #5e1229) !important;
     color: #fff;
 }
@@ -111,335 +100,1175 @@ body,
 }
 
 .sb-outline-btn {
-    background: #fdf8ec;
-    color: #6d1935;
-    border-color: #d9c397;
+    background: var(--sb-card);
+    color: var(--sb-burgundy);
+    border-color: var(--sb-line-strong);
 }
-
-.sb-outline-btn:hover {
-    background: #f6ecd8;
-    border-color: #c9a961;
-}
-
-/* ---------- tables: warm gold header instead of grey ---------- */
+.sb-outline-btn:hover { background: var(--sb-soft); border-color: var(--sb-gold-soft); }
 
 .sb-table th,
-.sb-payment-table th {
-    background: linear-gradient(180deg, #efe0c1, #e6d3ab);
-    color: #6d5730;
-}
+.sb-payment-table th { background: var(--sb-burgundy); color: #fbe9d0; }
 
-.sb-table td {
-    border-color: #ecdfc6;
+.sb-table td,
+.sb-payment-table td {
+    border-color: var(--sb-line);
+    border-top-color: var(--sb-line);
     color: #4a3c26;
 }
 
-/* ---------- sidebar: cream panel with gold accents ---------- */
+.sb-payment-table tbody tr:hover,
+.sb-table tbody tr:hover { background: var(--sb-soft); }
 
 .sb-sidebar {
+    background: #fffdf9;
+    color: var(--sb-ink);
+    border-right: 1px solid var(--sb-line);
+    box-shadow: 4px 0 20px rgba(60, 40, 15, 0.05);
+}
+.sb-sidebar::-webkit-scrollbar-track { background: #fffdf9; }
+.sb-sidebar::-webkit-scrollbar-thumb { background: var(--sb-gold-soft); }
+.sb-sidebar-brand { border-bottom: 1px solid var(--sb-line); }
+.sb-sidebar .sb-brand { color: var(--sb-burgundy-deep); }
+.sb-sidebar .sb-brand small { color: var(--sb-muted); }
+.sb-sidebar-caption { color: var(--sb-gold); }
+.sb-side-link { color: #5a4a2c; }
+.sb-side-link:hover { background: var(--sb-soft); color: var(--sb-ink); }
+.sb-side-link.is-active {
+    background: var(--sb-burgundy-tint);
+    color: var(--sb-burgundy);
+    font-weight: 700;
+    box-shadow: inset 3px 0 var(--sb-burgundy);
+}
+.sb-inventory-chevron { color: var(--sb-gold); }
+.sb-side-user { border-top: 1px solid var(--sb-line); }
+.sb-side-user-copy b { color: var(--sb-ink); }
+.sb-side-user-copy small { color: var(--sb-muted); }
+
+input,
+select,
+textarea,
+.sb-payment-filters input,
+.sb-payment-filters select,
+.sb-payment-review-form textarea,
+.sb-record-payment-dialog label input,
+.sb-record-payment-dialog label select {
+    background: #fff;
+    border-color: var(--sb-line-strong);
+    color: var(--sb-ink);
+}
+
+.sb-payment-filter-button {
+    background: var(--sb-gold-tint);
+    color: #6d5730;
+    border-color: var(--sb-line-strong);
+}
+.sb-payment-filter-button:hover { background: #efe0bd; border-color: var(--sb-gold-soft); }
+
+.sb-payment-stats > div::before {
+    background: linear-gradient(180deg, var(--sb-gold), var(--sb-gold-soft));
+}
+.sb-payment-stats > div:nth-child(2)::before {
+    background: linear-gradient(180deg, #4f8a5b, #6fae7c);
+}
+.sb-payment-stats > div:nth-child(3)::before {
+    background: linear-gradient(180deg, #8b2f48, var(--sb-burgundy));
+}
+.sb-payment-stats strong,
+.sb-payment-table-amount,
+.sb-ledger-amount strong,
+.sb-payment-dialog-amount { color: var(--sb-burgundy); }
+.sb-payment-stats span,
+.sb-payment-transactions-head span { color: var(--sb-muted); }
+.sb-payment-toolbar,
+.sb-payment-dialog { color: var(--sb-ink); }
+
+.sb-home,
+.sb-home-hero,
+.sb-home-footer { background: var(--sb-page); }
+.sb-home-hero {
+    background:
+        radial-gradient(ellipse at 2% 30%, #ffffff, transparent 40%),
+        linear-gradient(110deg, var(--sb-page), #f3e9d2);
+}
+.sb-home-experience { background: linear-gradient(180deg, #f3e9d2, #efe2c3); }
+.sb-home-about,
+.sb-home-trust { background: var(--sb-card); }
+.sb-experience-steps i { color: var(--sb-gold); }
+.sb-about-flower { color: var(--sb-gold-soft); }
+
+.sb-auth-shell {
+    background:
+        radial-gradient(ellipse at 12% 20%, #ffffff, transparent 37%),
+        radial-gradient(ellipse at 90% 90%, #f3e8cf, transparent 34%),
+        var(--sb-page);
+}
+.sb-auth-roles i { background: var(--sb-gold-tint); color: var(--sb-burgundy); }
+.sb-auth-roles > span { color: var(--sb-muted); }
+.sb-auth-register a,
+.sb-pass-label a { color: var(--sb-burgundy); }
+
+.sb-payment-status.is-pending,
+.sb-status-pending { background: #f7e8c4; color: #8a6520; }
+.sb-payment-status.is-verified,
+.sb-status-verified { background: #e2efe4; color: #3f7a4a; }
+.sb-payment-status.is-rejected,
+.sb-status-rejected { background: #f8e0e3; color: #a3323f; }
+
+.sb-tip { background: var(--sb-gold-tint); color: #6d5730; }
+.sb-tip b { color: var(--sb-burgundy-deep); }
+.sb-detail-photo { background: linear-gradient(145deg, #f6ecd6, #eddcb6); }
+.sb-customer-hero { background: linear-gradient(110deg, var(--sb-page), #f3e9d2); }
+
+.sb-worktop {
+    background: rgba(255, 253, 249, 0.95);
+    border-bottom: 1px solid var(--sb-line);
+}
+.sb-worktop-context b { color: var(--sb-burgundy-deep); }
+.sb-worktop-context .sb-kicker { color: var(--sb-gold); }
+.sb-worktop-name { color: #4a3c26; }
+
+.sb-form-errors { background: #fbe9ec; border-color: #f0cdd3; color: #9c3140; }
+.sb-success { background: #e8f3e9; border-color: #cfe4d2; color: #356440; }
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--sb-gold);
+    outline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+    .sb-sidebar { background: #fffdf9; color: var(--sb-ink); }
+}
+
+.sb-home-nav .sb-logo-lockup {
+    height: 52px;
+}
+
+/* ===== SIDEBAR: back to gold ===== */
+.sb-sidebar {
     background: linear-gradient(180deg, #f7edd8, #efe1c2);
-    color: #3a2c1a;
     border-right: 1px solid #d9c397;
     box-shadow: 5px 0 26px rgba(94, 66, 22, 0.1);
 }
-
-.sb-sidebar::-webkit-scrollbar-track {
-    background: #f7edd8;
-}
-
-.sb-sidebar::-webkit-scrollbar-thumb {
-    background: #c9a961;
-}
-
-.sb-sidebar-brand {
-    border-bottom: 1px solid #d9c397;
-}
-
-.sb-sidebar .sb-brand {
-    color: #4e1126;
-}
-
-.sb-sidebar .sb-brand small {
-    color: #6f5c40;
-}
-
-.sb-sidebar-caption {
-    color: #8a6d38;
-}
-
-.sb-side-link {
-    color: #5a4a2c;
-}
-
+.sb-sidebar::-webkit-scrollbar-track { background: #f7edd8; }
+.sb-sidebar::-webkit-scrollbar-thumb { background: #c9a961; }
+.sb-sidebar-brand { border-bottom: 1px solid #d9c397; }
+.sb-sidebar-caption,
+.sb-inventory-chevron,
+.sb-side-user-copy small { color: #8a6d38; }
+.sb-side-link { color: #5a4a2c; }
 .sb-side-link:hover {
     background: rgba(168, 129, 58, 0.13);
     color: #3a2c1a;
 }
-
 .sb-side-link.is-active {
     background: linear-gradient(90deg, #fdf8ec, #f6ecd8);
     color: #4e1126;
     font-weight: 700;
     box-shadow: inset 3px 0 #a8813a;
 }
-
-.sb-inventory-chevron {
-    color: #8a6d38;
-}
-
-.sb-side-user {
-    border-top: 1px solid #d9c397;
-}
-
-.sb-side-user-copy b {
-    color: #3a2c1a;
-}
-
-.sb-side-user-copy small {
-    color: #8a6d38;
-}
-
-/* ---------- payment page gold accents ---------- */
-
-.sb-payment-stats > div {
-    background: #fdf8ec;
-    border-color: #d9c397;
-}
-
-.sb-payment-stats > div::before {
-    background: linear-gradient(180deg, #a8813a, #c9a961);
-}
-
-.sb-payment-stats > div:nth-child(2)::before {
-    background: linear-gradient(180deg, #4f8a5b, #6fae7c);
-}
-
-.sb-payment-stats > div:nth-child(3)::before {
-    background: linear-gradient(180deg, #8b2f48, #6d1935);
-}
-
-.sb-payment-stats strong,
-.sb-payment-table-amount,
-.sb-ledger-amount strong,
-.sb-payment-dialog-amount {
-    color: #6d1935;
-}
-
-.sb-payment-stats span,
-.sb-payment-transactions-head span {
-    color: #8a6d38;
-}
-
-.sb-payment-table td {
-    border-top-color: #ecdfc6;
-    color: #4a3c26;
-}
-
-.sb-payment-table tbody tr:hover {
-    background: #faf1de;
-}
-
-.sb-payment-table th {
-    background: linear-gradient(180deg, #efe0c1, #e6d3ab);
-    color: #6d5730;
-}
-
-.sb-payment-transactions-head h2 {
-    color: #4e1126;
-}
-
-.sb-payment-toolbar,
-.sb-payment-dialog {
-    color: #3a2c1a;
-}
-
-.sb-payment-filters input,
-.sb-payment-filters select,
-.sb-payment-review-form textarea,
-.sb-record-payment-dialog label input,
-.sb-record-payment-dialog label select {
-    background: #fdf8ec;
-    border-color: #d9c397;
-    color: #3a2c1a;
-}
-
-.sb-payment-filter-button {
-    background: #f2e4c4;
-    color: #6d5730;
-    border-color: #d0b681;
-}
-
-.sb-payment-filter-button:hover {
-    background: #ead9ae;
-    border-color: #c9a961;
-}
-
-.sb-payment-add-button {
-    background: linear-gradient(180deg, #7d1c39, #5e1229);
-    border-color: #5e1229;
-    box-shadow: 0 8px 20px rgba(94, 17, 38, 0.28);
-}
-
-/* ---------- welcome / marketing hero: let the red gown show ---------- */
-
-.sb-home,
-.sb-home-hero {
-    background: #f4e9d4;
-}
-
-.sb-home-hero {
-    background:
-        radial-gradient(ellipse at 2% 30%, #f9f0de, transparent 40%),
-        linear-gradient(110deg, #f4e9d4, #ecdcbb);
-}
-
-.sb-home-hero h1 {
-    color: #4e1126;
-}
-
-.sb-home-hero-copy > p {
-    color: #6f5c40;
-}
-
-.sb-home-experience {
-    background: linear-gradient(180deg, #ecdcbb, #e6d2ab);
-}
-
-.sb-experience-steps i {
-    color: #a8813a;
-}
-
-.sb-home-about,
-.sb-home-trust {
-    background: #fdf8ec;
-}
-
-.sb-about-flower {
-    color: #c9a961;
-}
-
-.sb-home-footer {
-    background: #f4e9d4;
-}
-
-/* ---------- auth screens ---------- */
-
-.sb-auth-shell {
-    background:
-        radial-gradient(ellipse at 12% 20%, #f7ecd6, transparent 37%),
-        radial-gradient(ellipse at 90% 90%, #efe0c4, transparent 34%), #f4e9d4;
-}
-
-.sb-auth-card {
-    background: #fdf8ec;
-    border-color: #d9c397;
-}
-
-.sb-auth-roles i {
-    background: #f4e9d4;
-    color: #6d1935;
-}
-
-.sb-auth-roles > span {
-    color: #8a6d38;
-}
-
-.sb-auth-register a,
-.sb-pass-label a {
-    color: #6d1935;
-}
-
-/* ---------- status pills: keep semantic colours, warm them slightly ---------- */
-
-.sb-payment-status.is-pending,
-.sb-status-pending {
-    background: #f7e8c4;
-    color: #8a6520;
-}
-
-.sb-payment-status.is-verified,
-.sb-status-verified {
-    background: #e2efe4;
-    color: #3f7a4a;
-}
-
-.sb-payment-status.is-rejected,
-.sb-status-rejected {
-    background: #f8e0e3;
-    color: #a3323f;
-}
-
-/* ---------- misc surfaces ---------- */
-
-.sb-tip {
-    background: linear-gradient(180deg, #f7ecd6, #f2e4c4);
-    color: #6d5730;
-}
-
-.sb-tip b {
-    color: #4e1126;
-}
-
-.sb-detail-photo {
-    background: linear-gradient(145deg, #f0e3c6, #e6d2ab);
-}
-
-.sb-customer-hero {
-    background: linear-gradient(110deg, #f4e9d4, #ecdcbb);
-}
-
-.sb-settings-card,
-.sb-recent-booking,
-.sb-pagination .page-link,
-.sb-pagination .page-item > span {
-    background: #fdf8ec;
-    border-color: #d9c397;
-}
-
-.sb-worktop {
-    background: #fbf4e3f2;
-    border-bottom: 1px solid #d9c397;
-}
-
-.sb-worktop-context b {
-    color: #4e1126;
-}
-
-.sb-worktop-context .sb-kicker {
-    color: #8a6d38;
-}
-
-.sb-worktop-name {
-    color: #4a3c26;
-}
-
-.sb-form-errors {
-    background: #fbe9ec;
-    border-color: #f0cdd3;
-    color: #9c3140;
-}
-
-.sb-success {
-    background: #e8f3e9;
-    border-color: #cfe4d2;
-    color: #356440;
-}
-
-/* ---------- mobile sidebar: base rule uses a flat cream, re-gold it ---------- */
+.sb-side-user { border-top: 1px solid #d9c397; }
 
 @media (max-width: 700px) {
-    .sb-sidebar {
-        background: linear-gradient(180deg, #f7edd8, #efe1c2);
-        color: #3a2c1a;
+    .sb-sidebar { background: linear-gradient(180deg, #f7edd8, #efe1c2); }
+}
+
+/* ===== TABLE HEADER: lighter ===== */
+.sb-table th,
+.sb-payment-table th,
+.sb-table thead th,
+.sb-payment-table thead th {
+    background: linear-gradient(180deg, #f6ecd6, #efe0bd) !important;
+    color: #5a4a2c !important;
+    border-bottom: 1px solid #e3d6b8;
+}
+
+/* ===== TABLE HEADER TEXT: burgundy ===== */
+.sb-table th,
+.sb-payment-table th,
+.sb-table thead th,
+.sb-payment-table thead th {
+    color: #6d1935 !important;
+}
+
+/* ===== TABLE HEADER: burgundy back, highlighted text ===== */
+.sb-table th,
+.sb-payment-table th,
+.sb-table thead th,
+.sb-payment-table thead th {
+    background: linear-gradient(180deg, #7d1c39, #6d1935) !important;
+    color: #f6dc9a !important;
+    font-weight: 700 !important;
+    border-bottom: 2px solid #c9a961;
+}
+
+
+/* ===== TABLE HEADER TEXT: same gold as "desk." ===== */
+.sb-table th,
+.sb-payment-table th,
+.sb-table thead th,
+.sb-payment-table thead th {
+    color: #b08a3e !important;
+}
+
+/* ===== TABLE HEADER TEXT: white (same as Filter button) ===== */
+.sb-table th,
+.sb-payment-table th,
+.sb-table thead th,
+.sb-payment-table thead th {
+    color: #ffffff !important;
+}
+
+/* ===== PAGE BACKGROUND: peach-cream + big circle (all pages) ===== */
+body,
+.sb-app-shell {
+    background: #f7eee3;
+}
+
+.sb-page {
+    background:
+        radial-gradient(circle at 100% 0, #f2e3d3 0, #f2e3d3 240px, transparent 241px),
+        #f7eee3 !important;
+}
+
+@media print {
+    .sb-page { background: #fff !important; }
+}
+
+/* ===== PAGE BACKGROUND: stronger selector (beats page <style>) ===== */
+html body .sb-page {
+    background:
+        radial-gradient(circle at 100% 0, #f2e3d3 0, #f2e3d3 240px, transparent 241px),
+        #f7eee3 !important;
+}
+
+@media print {
+    html body .sb-page { background: #fff !important; }
+}
+
+/* ===== WELCOME NAV: full width, clean ivory ===== */
+html body .sb-home-nav {
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+    background: rgba(255, 253, 249, 0.96) !important;
+    border-bottom: 1px solid #ece3cf;
+    box-shadow: 0 4px 18px rgba(60, 40, 15, 0.06);
+    backdrop-filter: blur(8px);
+}
+
+/* ===== WELCOME SECTIONS: lighter ivory instead of heavy yellow ===== */
+html body .sb-home-trust,
+html body .sb-home-features,
+html body .sb-home-strip {
+    background: #fdf9ef !important;
+    border-color: #ece3cf !important;
+}
+
+html body .sb-home-trust > *,
+html body .sb-home-features > *,
+html body .sb-home-strip > * {
+    border-color: #ece3cf !important;
+}
+
+html body .sb-home-experience,
+html body .sb-home-about,
+html body .sb-home-section {
+    background: #fbf8f2 !important;
+}
+
+/* ===== WELCOME NAV: beige-gold (like the approved look), full width ===== */
+html body .sb-home-nav {
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+    background: #f1e5c3 !important;
+    border-bottom: 1px solid #d9c397;
+    box-shadow: none;
+    backdrop-filter: none;
+}
+
+/* ===== BURGUNDY SIDEBAR + PEACH CARDS LOOK ===== */
+:root {
+    --bp-wine: #5e0f27;
+    --bp-wine-deep: #4a0b1e;
+    --bp-peach: #f8ecdf;
+    --bp-card-top: #fbe5d6;
+    --bp-card-bottom: #f8dcc9;
+    --bp-gold: #c9a15a;
+}
+
+html body,
+html body .sb-app-shell { background: var(--bp-peach); }
+
+html body .sb-page {
+    background:
+        radial-gradient(ellipse 38% 22% at 104% 30%, rgba(201, 161, 90, .34) 0, transparent 70%),
+        radial-gradient(ellipse 30% 16% at 98% 78%, rgba(201, 161, 90, .26) 0, transparent 70%),
+        radial-gradient(ellipse 26% 14% at -4% 58%, rgba(201, 161, 90, .22) 0, transparent 70%),
+        radial-gradient(circle at 100% 0, #f3dfcd 0, #f3dfcd 220px, transparent 221px),
+        var(--bp-peach) !important;
+}
+
+html body .sb-sidebar {
+    background: linear-gradient(180deg, var(--bp-wine), var(--bp-wine-deep));
+    color: #f3dfd0;
+    border-right: 0;
+    box-shadow: 6px 0 24px rgba(74, 11, 30, .25);
+}
+html body .sb-sidebar::-webkit-scrollbar-track { background: var(--bp-wine-deep); }
+html body .sb-sidebar::-webkit-scrollbar-thumb { background: var(--bp-gold); }
+html body .sb-sidebar-brand { border-bottom: 1px solid rgba(255, 255, 255, .16); }
+html body .sb-sidebar .sb-brand { color: #fff; }
+html body .sb-sidebar .sb-brand small { color: #e6c9b8; }
+html body .sb-sidebar-caption { color: #d9b878; }
+html body .sb-side-link { color: #f1d9c6; }
+html body .sb-side-link:hover { background: rgba(255, 255, 255, .08); color: #fff; }
+html body .sb-side-link.is-active {
+    background: rgba(255, 255, 255, .1);
+    color: #fff;
+    font-weight: 700;
+    border: 1px solid var(--bp-gold);
+    box-shadow: none;
+}
+html body .sb-inventory-chevron { color: #d9b878; }
+html body .sb-inventory-subnav a { color: #f1d9c6; }
+html body .sb-inventory-subnav a.is-active { color: #fff; }
+html body .sb-side-user { border-top: 1px solid rgba(255, 255, 255, .16); }
+html body .sb-side-user-copy b { color: #fff; }
+html body .sb-side-user-copy small { color: #e6c9b8; }
+html body .sb-logout { color: #f1d9c6; }
+
+@media (max-width: 700px) {
+    html body .sb-sidebar {
+        background: linear-gradient(180deg, var(--bp-wine), var(--bp-wine-deep));
+        color: #f3dfd0;
     }
 }
-/* =========================================================
-   WELCOME NAV LOGO FIT
-   The header on the welcome page is 78px tall, but .sb-logo-lockup
-   renders at 76px, which overflowed and clipped the wordmark.
-   Cap it so the full logo sits inside the bar.
-   ========================================================= */
 
-.sb-home-nav .sb-logo-lockup {
-    height: 52px;
+html body .sb-stat {
+    background: linear-gradient(180deg, var(--bp-card-top), var(--bp-card-bottom));
+    border: 1px solid #f0cdb6;
+    border-radius: 16px;
+    box-shadow: 0 10px 24px rgba(94, 15, 39, .12);
+}
+html body .sb-stat i { background: var(--bp-wine); color: #fbe9d0; }
+html body .sb-stat-gold {
+    background: linear-gradient(180deg, #6d1935, var(--bp-wine));
+    border-color: var(--bp-wine);
+}
+html body .sb-stat-gold i { background: rgba(255, 255, 255, .14); color: #fbe9d0; }
+
+html body .sb-panel,
+html body .sb-settings-card,
+html body .sb-recent-booking,
+html body .sb-payment-transactions {
+    background: linear-gradient(180deg, var(--bp-card-top), var(--bp-card-bottom));
+    border: 2px solid var(--bp-wine);
+    border-radius: 18px;
+    box-shadow: 0 12px 28px rgba(94, 15, 39, .12);
+}
+html body .sb-table-wrap { background: #fdf3ea; border-radius: 12px; overflow: hidden; }
+html body .sb-pill { background: #ecc9b8; color: #6d1935; }
+html body .sb-tip { background: rgba(255, 255, 255, .55); }
+html body .sb-heading h1 em { color: #b99a5a; }
+
+/* ===== SIDEBAR BRAND NAME: visible on burgundy ===== */
+html body .sb-sidebar-brand-copy b {
+    color: #ffffff;
+}
+html body .sb-sidebar-brand-copy small {
+    color: #e6c9b8;
+}
+
+/* ===== OWNER DASHBOARD: peach cards + burgundy-outlined panels ===== */
+
+html body [class*="min-h-screen"][class*="bg-[#F7EFE4]"] {
+    background:
+        radial-gradient(ellipse 38% 22% at 104% 30%, rgba(201, 161, 90, .34) 0, transparent 70%),
+        radial-gradient(ellipse 30% 16% at 98% 78%, rgba(201, 161, 90, .26) 0, transparent 70%),
+        radial-gradient(ellipse 26% 14% at -4% 58%, rgba(201, 161, 90, .22) 0, transparent 70%),
+        #f8ecdf;
+}
+
+html body [class*="bg-[#B76E79]/5"] { background: rgba(201, 161, 90, .16); }
+html body [class*="bg-[#5C1A2B]/[0.025]"] { background: rgba(201, 161, 90, .10); }
+
+html body [class*="border-[#DCCBB2]"] {
+    background: linear-gradient(180deg, #fbe5d6, #f8dcc9);
+    border: 1px solid #f0cdb6;
+    box-shadow: 0 10px 24px rgba(94, 15, 39, .12);
+}
+
+html body [class*="w-14"][class*="h-14"]:not([class*="bg-white/10"]) {
+    background: #5e0f27;
+    color: #fbe9d0 !important;
+}
+
+html body [class*="border-[#EEDDE3]"] {
+    background: linear-gradient(180deg, #fbe5d6, #f8dcc9);
+    border: 2px solid #5e0f27;
+    box-shadow: 0 12px 28px rgba(94, 15, 39, .12);
+}
+
+html body [class*="border-[#F0E4E8]"] { border-color: rgba(94, 15, 39, .18); }
+
+html body [class*="border-[#EEDDE3]"] .overflow-x-auto { background: #fdf3ea; }
+
+html body [class*="border-[#EEDDE3]"] thead,
+html body [class*="border-[#EEDDE3]"] thead tr { background: #f6e4d6; }
+html body [class*="border-[#EEDDE3]"] th { color: #6d1935; }
+
+html body [class*="divide-[#F3E9ED]"] > * { border-color: rgba(94, 15, 39, .12); }
+html body [class*="hover:bg-[#FCF8FA]"]:hover { background: #fbeadd; }
+
+html body [class*="bg-[#F8EEF2]"] { background: #ecc9b8; }
+
+html body [class*="mt-5"][class*="bg-[#FCF8FA]"] {
+    background: rgba(255, 255, 255, .55);
+    border-color: #f0cdb6;
+}
+
+html body [class*="text-[#B76E79]"] { color: #8b2f48; }
+
+/* ===== SIDEBAR: consistent hover/active (incl. Inventory sub-links) ===== */
+html body .sb-side-link,
+html body .sb-inventory-subnav a {
+    transition: background .15s ease, color .15s ease;
+}
+html body .sb-side-link:hover,
+html body .sb-inventory-subnav a:hover {
+    background: rgba(255, 255, 255, .08);
+    color: #fff;
+}
+html body .sb-inventory-subnav a.is-active {
+    background: rgba(255, 255, 255, .1);
+    color: #fff;
+    font-weight: 700;
+    box-shadow: inset 2px 0 #c9a15a;
+}
+html body .sb-inventory-subnav {
+    border-left-color: rgba(255, 255, 255, .22);
+}
+
+/* ===== SIDEBAR SCROLLBAR: no gold ===== */
+html body .sb-sidebar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, .28) transparent;
+}
+html body .sb-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+html body .sb-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, .28);
+    border-radius: 8px;
+}
+html body .sb-sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, .42);
+}
+
+/* ===== SIDEBAR ACTIVE BORDER: no gold ===== */
+html body .sb-side-link.is-active {
+    border: 1px solid rgba(255, 255, 255, .35);
+}
+html body .sb-inventory-subnav a.is-active {
+    box-shadow: inset 2px 0 rgba(255, 255, 255, .55);
+}
+
+/* ===== TABLE HEADER: same burgundy as the Reservation desk button, no gold line ===== */
+.sb-table th,
+.sb-payment-table th,
+.sb-table thead th,
+.sb-payment-table thead th {
+    background: linear-gradient(180deg, #7d1c39, #5e1229) !important;
+    color: #ffffff !important;
+    border-bottom: 1px solid #4a0e21 !important;
+}
+
+/* ===== INPUT FOCUS: one burgundy border (no blue, no gold) ===== */
+html body input:focus,
+html body select:focus,
+html body textarea:focus,
+html body input:focus-visible,
+html body select:focus-visible,
+html body textarea:focus-visible {
+    outline: none !important;
+    border-color: #6d1935 !important;
+    box-shadow: 0 0 0 3px rgba(109, 25, 53, .12) !important;
+}
+
+/* ===== INPUT FOCUS: warm brown border, no purple tint ===== */
+html body input:focus,
+html body select:focus,
+html body textarea:focus,
+html body input:focus-visible,
+html body select:focus-visible,
+html body textarea:focus-visible {
+    outline: none !important;
+    border-color: #8a5a44 !important;
+    box-shadow: 0 0 0 3px rgba(138, 90, 68, .14) !important;
+}
+
+/* ===== CATALOG INPUTS: border matches the empty-state box ===== */
+html body .sb-catalog-tools input,
+html body .sb-catalog-tools select {
+    border: 1px solid #d9b8a0;
+    background: #fffaf5;
+}
+html body .sb-catalog-tools input:focus,
+html body .sb-catalog-tools select:focus,
+html body .sb-catalog-tools input:focus-visible,
+html body .sb-catalog-tools select:focus-visible {
+    outline: none !important;
+    border-color: #c28f6e !important;
+    box-shadow: 0 0 0 3px rgba(194, 143, 110, .18) !important;
+}
+html body .sb-catalog-tools .is-filtered {
+    border-color: #c28f6e;
+    background: #fbeadd;
+}
+
+/* ===== TABLE HEADER: flush with the panel edge ===== */
+html body .sb-reservations-panel,
+html body .sb-panel:has(.sb-ops-table) {
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #5e1229;
+}
+html body .sb-ops-table-wrap { border-radius: 0; }
+html body .sb-table th { border-bottom: 0 !important; }
+
+/* ===== FORM CARDS (Profile / Settings): calm cream, thin border ===== */
+html body .sb-settings-card {
+    background: #fffaf5;
+    border: 1px solid #d9b8a0;
+    border-radius: 16px;
+    box-shadow: 0 8px 22px rgba(94, 15, 39, .08);
+}
+
+/* ===== DANGER BUTTON (Delete account): visible red ===== */
+html body button[class*="bg-red"],
+html body [class*="bg-red-600"] {
+    background: #a3323f !important;
+    border: 1px solid #a3323f !important;
+    color: #ffffff !important;
+    opacity: 1 !important;
+}
+html body button[class*="bg-red"]:hover,
+html body [class*="bg-red-600"]:hover {
+    background: #8a2a35 !important;
+}
+
+/* ===== DELETE ACCOUNT BUTTON: always visible red, all states ===== */
+html body button[x-on\:click\.prevent*="deletion"],
+html body button[class*="red"],
+html body button[class*="danger"] {
+    background: #a3323f !important;
+    border: 1px solid #a3323f !important;
+    color: #ffffff !important;
+    opacity: 1 !important;
+    text-shadow: none !important;
+}
+html body button[x-on\:click\.prevent*="deletion"]:hover,
+html body button[x-on\:click\.prevent*="deletion"]:focus,
+html body button[x-on\:click\.prevent*="deletion"]:active,
+html body button[class*="red"]:hover,
+html body button[class*="red"]:focus,
+html body button[class*="red"]:active,
+html body button[class*="danger"]:hover,
+html body button[class*="danger"]:focus,
+html body button[class*="danger"]:active {
+    background: #8a2a35 !important;
+    border-color: #8a2a35 !important;
+    color: #ffffff !important;
+    opacity: 1 !important;
+}
+
+/* ===== DELETE ACCOUNT: stronger specificity so hover/focus never turns white ===== */
+html body button[x-on\:click\.prevent*="deletion"]:not(#x),
+html body button[x-on\:click\.prevent*="deletion"]:not(#x):hover,
+html body button[x-on\:click\.prevent*="deletion"]:not(#x):focus,
+html body button[x-on\:click\.prevent*="deletion"]:not(#x):focus-visible,
+html body button[x-on\:click\.prevent*="deletion"]:not(#x):active,
+html body button[x-on\:click\.prevent*="deletion"]:not(#x):disabled {
+    background: #a3323f !important;
+    background-image: none !important;
+    border: 1px solid #a3323f !important;
+    color: #ffffff !important;
+    opacity: 1 !important;
+    box-shadow: none !important;
+}
+html body button[x-on\:click\.prevent*="deletion"]:not(#x):hover,
+html body button[x-on\:click\.prevent*="deletion"]:not(#x):active {
+    background: #8a2a35 !important;
+    border-color: #8a2a35 !important;
+}
+
+/* ===== MODALS: blurred backdrop + Login-style card ===== */
+html body .bg-gray-500.opacity-75 {
+    background: rgba(60, 15, 30, .35) !important;
+    opacity: 1 !important;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+}
+
+html body [class*="rounded-lg"][class*="shadow-xl"] {
+    border-radius: 24px !important;
+    box-shadow: 0 30px 80px rgba(60, 15, 30, .35) !important;
+}
+
+html body [class*="shadow-xl"] h2 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    color: #4e1126;
+}
+
+html body [class*="shadow-xl"] input {
+    height: 50px;
+    border: 1px solid #d9b8a0;
+    background: #fffaf5;
+    border-radius: 14px;
+}
+html body [class*="shadow-xl"] input:focus {
+    outline: none !important;
+    border-color: #c28f6e !important;
+    box-shadow: 0 0 0 3px rgba(194, 143, 110, .18) !important;
+}
+
+/* Cancel */
+html body [class*="shadow-xl"] button[type="button"]:not(#x) {
+    height: 46px;
+    padding: 0 22px;
+    border: 1px solid #d9b8a0 !important;
+    border-radius: 14px;
+    background: #fff !important;
+    color: #5a4a2c !important;
+    font: 600 14px 'DM Sans', sans-serif;
+    letter-spacing: 0;
+    text-transform: none;
+}
+html body [class*="shadow-xl"] button[type="button"]:not(#x):hover {
+    background: #fbeadd !important;
+}
+
+/* Delete account (confirm) */
+html body [class*="shadow-xl"] button[type="submit"]:not(#x),
+html body [class*="shadow-xl"] button[type="submit"]:not(#x):hover,
+html body [class*="shadow-xl"] button[type="submit"]:not(#x):focus {
+    height: 46px;
+    padding: 0 24px;
+    border: 0 !important;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #7d1c39, #5e1229) !important;
+    color: #fff !important;
+    font: 600 14px 'DM Sans', sans-serif;
+    letter-spacing: 0;
+    text-transform: none;
+    box-shadow: 0 10px 24px rgba(94, 18, 41, .28) !important;
+    opacity: 1 !important;
+}
+html body [class*="shadow-xl"] button[type="submit"]:not(#x):hover {
+    background: linear-gradient(180deg, #5e1229, #4a0e21) !important;
+}
+
+/* ===== MODAL: centered on screen ===== */
+html body [class*="fixed"][class*="inset-0"][class*="overflow-y-auto"] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+html body [class*="shadow-xl"][class*="rounded-lg"] {
+    width: 100%;
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+/* ===== MODAL: password field colour ===== */
+html body [class*="shadow-xl"] input {
+    background: #f6f1ec !important;
+    border: 1px solid #d9b8a0 !important;
+    margin-bottom: 20px;
+}
+html body [class*="shadow-xl"] input:focus {
+    background: #ffffff !important;
+    border-color: #c28f6e !important;
+    box-shadow: 0 0 0 3px rgba(194, 143, 110, .18) !important;
+}
+
+/* ===== MODAL: buttons on the right, with spacing ===== */
+html body [class*="shadow-xl"] div:has(> button[type="button"]) {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+/* ===== MODAL: pinned to the exact centre of the screen ===== */
+html body [class*="shadow-xl"][class*="rounded-lg"] {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+    width: min(560px, calc(100vw - 48px));
+    height: fit-content;
+    max-height: calc(100vh - 48px);
+    margin: auto;
+    overflow-y: auto;
+}
+
+/* ===== MODAL OPEN: blur + dim the sidebar too ===== */
+html body:has([class*="fixed"][class*="inset-0"][class*="overflow-y-auto"]:not([style*="display: none"])) .sb-sidebar {
+    filter: blur(8px) brightness(.8);
+    pointer-events: none;
+    transition: filter .2s ease;
+}
+
+/* ===== MODAL PASSWORD FIELD: soft taupe border (no orange) ===== */
+html body [class*="shadow-xl"] input:not(#x) {
+    border: 1px solid #cdbfb2 !important;
+}
+html body [class*="shadow-xl"] input:not(#x):focus,
+html body [class*="shadow-xl"] input:not(#x):focus-visible {
+    outline: none !important;
+    border-color: #8c7b6b !important;
+    box-shadow: 0 0 0 3px rgba(140, 123, 107, .16) !important;
+}
+
+/* ===== MODAL PASSWORD FIELD: warm tones only (no purple cast) ===== */
+html body [class*="shadow-xl"] input:not(#x) {
+    border: 1px solid #d9c3b0 !important;
+    box-shadow: none !important;
+}
+html body [class*="shadow-xl"] input:not(#x)::placeholder {
+    color: #9a8a7c !important;
+    opacity: 1;
+}
+html body [class*="shadow-xl"] input:not(#x):focus,
+html body [class*="shadow-xl"] input:not(#x):focus-visible {
+    outline: none !important;
+    border-color: #7a5a47 !important;
+    box-shadow: 0 0 0 3px rgba(122, 90, 71, .12) !important;
+}
+
+/* ===== AUTOFILL: no Chrome blue ===== */
+html body input:-webkit-autofill,
+html body input:-webkit-autofill:hover,
+html body input:-webkit-autofill:focus,
+html body input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #fffaf5 inset !important;
+    box-shadow: 0 0 0 1000px #fffaf5 inset !important;
+    -webkit-text-fill-color: #3a2c1a !important;
+    caret-color: #3a2c1a;
+    transition: background-color 9999s ease-out 0s;
+}
+
+/* ===== Cream / maroon / gold override (matches login + employee dashboard) ===== */
+:root, html body {
+    --bp-peach: #f8f0d6;
+    --bp-card-top: #fbf5e3;
+    --bp-card-bottom: #fbf5e3;
+}
+
+/* page background: plain cream, no peach circle or glow */
+html body .sb-page,
+html body .sb-main-column,
+html body .sb-main-content,
+html body [class*="min-h-screen"][class*="bg-[#F7EFE4]"] {
+    background: #f8f0d6 !important;
+}
+
+/* cards and panels: cream, thin gold border, soft shadow (the maroon highlight card stays maroon) */
+html body .sb-stat:not(.sb-stat-gold),
+html body .sb-panel {
+    background: #fbf5e3 !important;
+    border: 1px solid #d9c089 !important;
+    box-shadow: 0 10px 26px rgba(107, 0, 32, .08) !important;
+}
+
+/* stat icons: soft gold instead of solid wine */
+html body .sb-stat:not(.sb-stat-gold) i {
+    background: rgba(166, 124, 46, .14) !important;
+    color: #a67c2e !important;
+}
+
+/* numbers: real digits, so "0" stops looking like the letter "O" */
+html body .sb-stat b {
+    font-family: 'DM Sans', sans-serif !important;
+    font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* tables: transparent background, gold header line, gentle row hover */
+html body .sb-table-wrap { background: transparent !important; }
+html body .sb-table thead th,
+html body .sb-payment-table thead th {
+    background: transparent !important;
+    color: #a67c2e !important;
+    border-bottom: 1px solid #d9c089 !important;
+}
+html body .sb-table tbody tr:hover td,
+html body .sb-payment-table tbody tr:hover td { background: rgba(166, 124, 46, .08); }
+
+/* no hover effect on the "No gowns found" style empty rows */
+html body .sb-table tbody tr:has(.sb-empty):hover td,
+html body .sb-table td.sb-empty:hover { background: transparent !important; box-shadow: none !important; }
+
+/* pill buttons */
+html body .sb-btn { border-radius: 999px !important; }
+html body .sb-pill {
+    background: transparent !important;
+    color: #6b0020 !important;
+    border: 1px solid #a67c2e !important;
+    border-radius: 999px !important;
+}
+
+/* ===== Leftover peach/pink cleanup ===== */
+
+/* table header strip: no pink band */
+html body .sb-page table thead,
+html body .sb-page table thead tr,
+html body .sb-page table thead th {
+    background: transparent !important;
+}
+
+/* inventory thumbnail: soft gold instead of the pink/green gradient */
+html body .sb-inventory-thumb {
+    background: rgba(166, 124, 46, .14) !important;
+    color: #a67c2e !important;
+}
+
+/* View / Edit / Deactivate: gold outline pills with maroon text */
+html body .sb-inventory-actions a,
+html body .sb-inventory-actions button {
+    background: transparent !important;
+    color: #6b0020 !important;
+    border: 1px solid #d9c089 !important;
+    border-radius: 999px !important;
+}
+html body .sb-inventory-actions a:hover,
+html body .sb-inventory-actions button:hover {
+    background: rgba(166, 124, 46, .12) !important;
+}
+html body .sb-inventory-actions .sb-retire {
+    color: #a3323f !important;
+    border-color: #e5c3c3 !important;
+}
+
+/* sidebar sub-item (Gowns / Categories / Accessories): same highlight as the main active link */
+html body .sb-inventory-subnav a.is-active {
+    background: rgba(255, 255, 255, .12) !important;
+    color: #fff !important;
+}
+
+/* ===== Reservation form: softer on the eyes ===== */
+html body .sb-form-errors {
+    background: #fbf5e3 !important;
+    border: 1px solid #d9c089 !important;
+    border-left: 4px solid #6b0020 !important;
+    color: #6b0020 !important;
+}
+html body .sb-step-progress li {
+    background: #fbf5e3 !important;
+    border: 1px solid #d9c089 !important;
+    color: #7a6a60 !important;
+}
+html body .sb-step-progress li span { background: rgba(166, 124, 46, .18) !important; color: #6b0020 !important; }
+html body .sb-step-progress li.is-complete span { background: #a67c2e !important; color: #fff !important; }
+html body .sb-step-progress li.is-active { background: #6b0020 !important; border-color: #6b0020 !important; color: #fff !important; }
+html body .sb-step-progress li.is-active b { color: #fff !important; }
+html body .sb-step-progress li.is-active span { background: #f0d79a !important; color: #6b0020 !important; }
+
+html body .sb-flow-step .sb-kicker { color: #a67c2e !important; }
+html body .sb-flow-step h2 { color: #6b0020 !important; }
+
+html body .sb-reservation-form input:not([type="checkbox"]):not([type="file"]),
+html body .sb-reservation-form select,
+html body .sb-reservation-form textarea {
+    background: #fff !important;
+    border: 1px solid #d9c089 !important;
+    color: #4a3b35 !important;
+}
+html body .sb-reservation-form input:focus,
+html body .sb-reservation-form select:focus,
+html body .sb-reservation-form textarea:focus {
+    border-color: #a67c2e !important;
+    box-shadow: 0 0 0 3px rgba(166, 124, 46, .18) !important;
+    outline: none;
+}
+html body .sb-reservation-form ::placeholder { color: #8a7a6e; }
+html body .sb-reservation-form input[type="file"]::file-selector-button {
+    margin-right: 12px;
+    padding: 8px 16px;
+    border: 0;
+    border-radius: 999px;
+    background: #6b0020;
+    color: #fff;
+    cursor: pointer;
+}
+
+/* ===== Reservations table: spacing ===== */
+html body .sb-ops-table--reservations th,
+html body .sb-ops-table--reservations td {
+    padding: 18px 20px !important;
+    vertical-align: middle;
+    font-size: 14px;
+}
+html body .sb-ops-table--reservations th {
+    font-size: 12px;
+    padding-top: 16px !important;
+    padding-bottom: 16px !important;
+}
+html body .sb-ops-table--reservations td strong {
+    display: block;
+    font-size: 14px;
+    line-height: 1.3;
+}
+html body .sb-ops-table--reservations .sb-cell-sub {
+    display: block;
+    margin-top: 3px;
+    font-size: 12px;
+    line-height: 1.4;
+}
+html body .sb-ops-table--reservations th:nth-child(1) { width: 15%; }
+html body .sb-ops-table--reservations th:nth-child(2) { width: 20%; }
+html body .sb-ops-table--reservations th:nth-child(3) { width: 17%; }
+html body .sb-ops-table--reservations th:nth-child(4) { width: 15%; }
+html body .sb-ops-table--reservations th:nth-child(5) { width: 14%; }
+html body .sb-ops-table--reservations th:nth-child(6) { width: 11%; }
+html body .sb-ops-table--reservations tbody tr + tr td {
+    border-top: 1px solid rgba(217, 192, 137, .45);
+}
+
+/* status pill: soft gold instead of pink */
+html body .sb-status {
+    background: rgba(166, 124, 46, .16) !important;
+    color: #7a5a1c !important;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* ===== Reservations table: keep codes and headers on one line ===== */
+html body .sb-ops-table--reservations th { white-space: nowrap; }
+html body .sb-ops-table--reservations td:first-child strong { white-space: nowrap; }
+html body .sb-ops-table--reservations th:nth-child(1) { width: 19%; }
+html body .sb-ops-table--reservations th:nth-child(2) { width: 17%; }
+html body .sb-ops-table--reservations th:nth-child(3) { width: 16%; }
+html body .sb-ops-table--reservations th:nth-child(4) { width: 15%; }
+html body .sb-ops-table--reservations th:nth-child(5) { width: 15%; }
+html body .sb-ops-table--reservations th:nth-child(6) { width: 10%; }
+html body .sb-ops-table--reservations th:nth-child(7) { width: 8%; }
+
+/* ===== Payments page: match cream / maroon / gold ===== */
+html body .sb-payment-toolbar { gap: 12px; flex-wrap: wrap; align-items: center; }
+html body .sb-payment-filters { flex: 1 1 560px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+html body .sb-payment-search { flex: 1 1 260px; min-width: 220px; }
+html body .sb-payment-search input { width: 100%; }
+
+html body .sb-payment-filter-button {
+    background: transparent !important;
+    color: #6b0020 !important;
+    border: 1px solid #a67c2e !important;
+    border-radius: 999px !important;
+    padding: 10px 20px;
+    font-weight: 600;
+}
+html body .sb-payment-filter-button:hover { background: rgba(166, 124, 46, .1) !important; }
+html body .sb-payment-add-button { border-radius: 999px !important; }
+
+/* stat cards: cream with a thin gold border */
+html body .sb-payment-stats > div {
+    background: #fbf5e3 !important;
+    border: 1px solid #d9c089 !important;
+    box-shadow: 0 10px 26px rgba(107, 0, 32, .08) !important;
+    border-radius: 20px !important;
+}
+html body .sb-payment-stats > div strong {
+    font-family: 'DM Sans', sans-serif !important;
+    font-variant-numeric: lining-nums tabular-nums;
+    color: #6b0020 !important;
+}
+
+/* transactions panel: thin gold border, not heavy maroon */
+html body .sb-payment-transactions {
+    background: #fbf5e3 !important;
+    border: 1px solid #d9c089 !important;
+    border-radius: 20px !important;
+    box-shadow: 0 10px 26px rgba(107, 0, 32, .06) !important;
+}
+html body .sb-payment-transactions-head { background: transparent !important; }
+html body .sb-payment-table thead th { background: transparent !important; }
+html body .sb-payment-id-button { color: #6b0020 !important; }
+
+/* Details button: gold outline pill */
+html body .sb-payment-open-button {
+    background: transparent !important;
+    color: #6b0020 !important;
+    border: 1px solid #d9c089 !important;
+    border-radius: 999px !important;
+}
+html body .sb-payment-open-button:hover { background: rgba(166, 124, 46, .12) !important; }
+
+/* ===== Reservations table: fix cut-off Actions column ===== */
+html body .sb-ops-table--reservations {
+    width: 100%;
+    table-layout: auto;
+}
+html body .sb-ops-table--reservations th,
+html body .sb-ops-table--reservations td {
+    width: auto !important;
+    padding: 16px 12px !important;
+}
+html body .sb-ops-table--reservations th:first-child,
+html body .sb-ops-table--reservations td:first-child { padding-left: 20px !important; }
+html body .sb-ops-table--reservations th:last-child,
+html body .sb-ops-table--reservations td:last-child { padding-right: 20px !important; white-space: nowrap; }
+html body .sb-ops-table--reservations th { white-space: normal; line-height: 1.3; }
+html body .sb-ops-table--reservations td:first-child strong { white-space: normal; word-break: break-word; }
+html body .sb-ops-table-wrap { overflow-x: auto; }
+
+/* ===== Row action dropdowns (Manage / Record pickup / Record return): don't clip them ===== */
+html body .sb-panel:has(.sb-ops-table-wrap),
+html body .sb-ops-table-wrap {
+    overflow: visible !important;
+}
+html body .sb-row-actions { position: relative; }
+html body .sb-row-actions > summary { cursor: pointer; }
+html body .sb-row-actions-panel,
+html body .sb-row-actions > .sb-row-action-form {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    z-index: 40;
+    width: 300px;
+    max-width: 85vw;
+    display: grid;
+    gap: 12px;
+    padding: 16px;
+    text-align: left;
+    white-space: normal;
+    background: #fff;
+    border: 1px solid #d9c089;
+    border-radius: 16px;
+    box-shadow: 0 18px 40px rgba(107, 0, 32, .18);
+}
+html body .sb-row-actions-panel .sb-row-action-form {
+    display: grid;
+    gap: 10px;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    position: static;
+    width: auto;
+}
+html body .sb-row-actions-panel .sb-row-action-form + .sb-row-action-form {
+    padding-top: 12px;
+    border-top: 1px solid rgba(217, 192, 137, .5);
+}
+
+/* ===== Owner dashboard: six stat cards, all cream and consistent ===== */
+html body .xl\:grid-cols-3 > .group {
+    background: #fbf5e3 !important;
+    border: 1px solid #d9c089 !important;
+    box-shadow: 0 10px 26px rgba(107, 0, 32, .08) !important;
+    border-radius: 20px !important;
+}
+
+/* labels: bold */
+html body .xl\:grid-cols-3 > .group p.uppercase {
+    color: #7a6a60 !important;
+    font-weight: 700 !important;
+    letter-spacing: .08em;
+}
+
+/* numbers: maroon, real digits (so "0" stops looking like "O" and the payments total is readable) */
+html body .xl\:grid-cols-3 > .group h2 {
+    color: #6b0020 !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-variant-numeric: lining-nums tabular-nums;
+    font-weight: 700 !important;
+}
+
+/* small caption under the number */
+html body .xl\:grid-cols-3 > .group p:not(.uppercase) {
+    color: #7a6a60 !important;
+}
+
+/* icon squares: soft gold tint, gold icon (same for every card, including Payments received) */
+html body .xl\:grid-cols-3 > .group .w-14 {
+    background: rgba(166, 124, 46, .16) !important;
+    color: #a67c2e !important;
+}
+
+/* no decorative peach/pink circles behind the page */
+html body .min-h-screen > .fixed.inset-0 { display: none !important; }
+
+/* ===== Owner dashboard: lower panels (Recent Reservations / Recently Added) ===== */
+html body .xl\:grid-cols-3 > section {
+    background: #fbf5e3 !important;
+    border: 1px solid #d9c089 !important;
+    border-radius: 20px !important;
+    box-shadow: 0 10px 26px rgba(107, 0, 32, .08) !important;
+}
+html body .xl\:grid-cols-3 > section > div:first-child {
+    border-color: rgba(217, 192, 137, .6) !important;
+}
+
+/* table header: no pink strip, gold bold labels */
+html body .xl\:grid-cols-3 > section thead tr {
+    background: transparent !important;
+    border-color: #d9c089 !important;
+}
+html body .xl\:grid-cols-3 > section thead th {
+    color: #a67c2e !important;
+    font-weight: 700 !important;
+}
+
+/* rows: gold dividers, gentle hover */
+html body .xl\:grid-cols-3 > section tbody > tr {
+    border-color: rgba(217, 192, 137, .45) !important;
+}
+html body .xl\:grid-cols-3 > section tbody > tr:hover {
+    background: rgba(166, 124, 46, .08) !important;
+}
+html body .xl\:grid-cols-3 > section .border-b,
+html body .xl\:grid-cols-3 > section [class*="border-[#F3E9ED]"] {
+    border-color: rgba(217, 192, 137, .45) !important;
+}
+
+/* pills (status, "Latest Bookings"): soft gold instead of pink */
+html body .xl\:grid-cols-3 > section span.rounded-full {
+    background: rgba(166, 124, 46, .16) !important;
+    color: #7a5a1c !important;
+}
+
+/* "View all →": maroon instead of rose */
+html body .xl\:grid-cols-3 > section a { color: #6b0020 !important; }
+html body .xl\:grid-cols-3 > section a:hover { text-decoration: underline; }
+
+/* "Add New Gown": pill like the other buttons */
+html body a[href$="/owner/gowns/create"] {
+    border-radius: 999px !important;
+    background: #6b0020 !important;
+}
+html body a[href$="/owner/gowns/create"]:hover { background: #4f0018 !important; }
+
+/* ===== Reports: align gridlines with the bars + highlight the #1 gown ===== */
+html body .sb-chart { background-position: 0 -2px !important; }
+
+html body .sb-report-panel-head + .sb-rank { margin-top: 17px; }
+html body .sb-report-panel-head + .sb-rank .sb-rank-number {
+    background: #6b0020 !important;
+    color: #f0d79a !important;
 }

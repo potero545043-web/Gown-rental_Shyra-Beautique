@@ -83,32 +83,29 @@ Route::middleware(['auth', 'role:employee'])
     ->name('employee.')
     ->group(function () {
 
-        Route::get('/dashboard', [
-            EmployeeDashboardController::class,
-            'index'
-        ])->name('dashboard');
+        Route::get('/dashboard', [EmployeeDashboardController::class, 'index'])->name('dashboard');
 
+        // Reservations (table + add reservation -> catalog)
         Route::get('/reservations', [ManagementController::class, 'reservations'])->name('reservations');
         Route::post('/reservations', [ManagementController::class, 'storeEmployeeReservation'])->name('reservations.store');
         Route::patch('/reservations/{reservation}', [ManagementController::class, 'updateReservation'])->name('reservations.update');
+
+        // Rentals & returns
         Route::get('/rentals', [ManagementController::class, 'rentals'])->name('rentals');
         Route::post('/rentals/{reservation}/release', [ManagementController::class, 'releaseGown'])->name('rentals.release');
         Route::post('/rentals/{reservation}/return', [ManagementController::class, 'returnGown'])->name('rentals.return');
         Route::post('/rentals/{reservation}/release-id', [ManagementController::class, 'releaseIdCollateral'])->name('rentals.release-id');
         Route::post('/cleaning/{cleaning}/complete', [ManagementController::class, 'completeCleaning'])->name('cleaning.complete');
-        Route::get('/maintenance', [ManagementController::class, 'maintenance'])->name('maintenance');
-        Route::post('/maintenance', [ManagementController::class, 'createMaintenance'])->name('maintenance.store');
-        Route::post('/maintenance/{maintenance}/complete', [ManagementController::class, 'completeMaintenance'])->name('maintenance.complete');
-        Route::get('/customers', [ManagementController::class, 'customers'])->name('customers');
-        Route::get('/customers/{customer}', [ManagementController::class, 'customerDetails'])->name('customers.show');
+
+        // Payments
         Route::get('/payments', [ManagementController::class, 'payments'])->name('payments');
         Route::post('/reservations/{reservation}/payments', [ManagementController::class, 'recordPayment'])->name('payments.store');
         Route::patch('/payments/{payment}', [ManagementController::class, 'verifyPayment'])->name('payments.update');
 
+        // Catalog (reserve for walk-in customer)
         Route::get('/catalog', [CustomerDashboardController::class, 'catalog'])->name('catalog');
         Route::get('/catalog/{gown}', [CustomerDashboardController::class, 'details'])->name('catalog.show');
         Route::get('/catalog/{gown}/reserve', [ManagementController::class, 'employeeReservationForm'])->name('catalog.reserve');
-
     });
 
 
