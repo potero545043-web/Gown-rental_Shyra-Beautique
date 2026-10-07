@@ -66,7 +66,7 @@
                                         {{ $rental->items->map(fn($item) => $item->gown?->name)->filter()->join(', ') ?: 'Gown' }}
                                     </td>
                                     <td data-label="Status"><span
-                                            class="sb-status">{{ ucfirst(str_replace('_', ' ', $rental->status)) }}</span>
+                                            class="sb-status sb-status-{{ $rental->status }}">{{ ucfirst(str_replace('_', ' ', $rental->status)) }}</span>
                                     </td>
                                     <td data-label="Rental dates">
                                         <strong>{{ $rental->pickup_date?->format('M d, Y') }}</strong>

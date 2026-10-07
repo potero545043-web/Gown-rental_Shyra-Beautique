@@ -1,4 +1,4 @@
-<h2>Gown details</h2>
+<h2 class="font-display">Gown details</h2>
 <p>Gown code: {{ $gown?->gown_code ?? 'Assigned automatically when saved' }}</p>
 <div class="sb-inventory-grid">
     <label>Gown name<input name="name" value="{{ old('name', $gown?->name) }}" maxlength="255" required></label>
@@ -16,7 +16,7 @@
 <label>Description<textarea name="description" rows="3">{{ old('description', $gown?->description) }}</textarea></label>
 <label>Measurements<textarea name="measurements" rows="3" placeholder="Bust, waist, length, and other fit details">{{ old('measurements', $gown?->measurements) }}</textarea></label>
 <div class="sb-inventory-accessories">
-    <h3>Included accessories</h3>
+    <h3 class="font-display">Included accessories</h3>
     <p>Accessories are tracked separately, then linked here when included with this gown.</p>
     <div class="sb-inventory-check-grid">
         @forelse($accessories as $accessory)
@@ -30,7 +30,7 @@
     @if(!empty($inDrawer))
         <button class="sb-inventory-secondary" type="button" onclick="document.getElementById('gown-create-dialog').close()">Cancel</button>
     @else
-        <a class="sb-inventory-secondary" href="{{ route('owner.gowns.index') }}">Cancel</a>
+        <a class="sb-inventory-secondary" href="{{ route('owner.gowns.index', !empty($gown?->archived_at) ? ['archived' => 1] : []) }}">Cancel</a>
     @endif
     <button class="sb-inventory-primary" type="submit">{{ $isEditing ? 'Save gown' : 'Add gown to collection' }}</button>
 </div>

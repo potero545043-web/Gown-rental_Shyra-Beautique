@@ -239,7 +239,7 @@ class ManagementController extends Controller
     {
         return view('management.maintenance', [
             'maintenanceRecords' => MaintenanceRecord::with(['gown', 'processedBy'])->latest()->paginate(15),
-            'gowns' => Gown::whereNotIn('status', ['retired', 'rented'])->orderBy('name')->get(),
+            'gowns' => Gown::whereNull('archived_at')->whereNotIn('status', ['retired', 'rented'])->orderBy('name')->get(),
             'base' => request()->user()->role,
         ]);
     }
@@ -256,7 +256,7 @@ class ManagementController extends Controller
         ]);
 
         DB::transaction(function () use ($request, $data) {
-            $gown = Gown::whereKey($data['gown_id'])->lockForUpdate()->firstOrFail();
+            $gown = Gown::whereNull('archived_at')->whereKey($data['gown_id'])->lockForUpdate()->firstOrFail();
             abort_if(in_array($gown->status, ['retired', 'rented'], true), 422, 'This gown cannot be sent to maintenance right now.');
             $activeRental = Reservation::whereIn('status', ['pending', 'awaiting_payment', 'confirmed', 'ready_for_pickup', 'released', 'overdue'])
                 ->whereHas('items', fn($items) => $items->where('gown_id', $gown->id))

@@ -12,6 +12,7 @@ class Accessory extends Model
     protected $fillable = [
         'name',
         'description',
+        'image',
         'quantity',
         'replacement_cost',
         'status',

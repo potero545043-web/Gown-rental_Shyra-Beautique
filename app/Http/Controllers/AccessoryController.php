@@ -4,10 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Models\Accessory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class AccessoryController extends Controller
 {
+    private function rules(): array
+    {
+        return [
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'quantity' => ['required', 'integer', 'min:0'],
+            'replacement_cost' => ['nullable', 'numeric', 'min:0'],
+            'status' => [
+                'required',
+                Rule::in(['available', 'unavailable', 'damaged', 'retired']),
+            ],
+        ];
+    }
+
     public function index()
     {
         $accessories = Accessory::withCount('gowns')
@@ -24,40 +40,11 @@ class AccessoryController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-            ],
+        $validated = $request->validate($this->rules());
 
-            'description' => [
-                'nullable',
-                'string',
-            ],
-
-            'quantity' => [
-                'required',
-                'integer',
-                'min:0',
-            ],
-
-            'replacement_cost' => [
-                'nullable',
-                'numeric',
-                'min:0',
-            ],
-
-            'status' => [
-                'required',
-                Rule::in([
-                    'available',
-                    'unavailable',
-                    'damaged',
-                    'retired',
-                ]),
-            ],
-        ]);
+        if ($request->hasFile('image')) {
+            $validated['image'] = $request->file('image')->store('accessories', 'public');
+        }
 
         Accessory::create($validated);
 
@@ -82,40 +69,17 @@ class AccessoryController extends Controller
 
     public function update(Request $request, Accessory $accessory)
     {
-        $validated = $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-            ],
+        $validated = $request->validate($this->rules());
 
-            'description' => [
-                'nullable',
-                'string',
-            ],
+        if ($request->hasFile('image')) {
+            if ($accessory->image) {
+                Storage::disk('public')->delete($accessory->image);
+            }
 
-            'quantity' => [
-                'required',
-                'integer',
-                'min:0',
-            ],
-
-            'replacement_cost' => [
-                'nullable',
-                'numeric',
-                'min:0',
-            ],
-
-            'status' => [
-                'required',
-                Rule::in([
-                    'available',
-                    'unavailable',
-                    'damaged',
-                    'retired',
-                ]),
-            ],
-        ]);
+            $validated['image'] = $request->file('image')->store('accessories', 'public');
+        } else {
+            unset($validated['image']);
+        }
 
         $accessory->update($validated);
 

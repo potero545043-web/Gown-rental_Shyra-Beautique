@@ -9,6 +9,7 @@ return new class extends Migration {
     {
         // The columns already exist from the run that happened before the
         // working tree was reverted, so each addition is guarded.
+
         if (!Schema::hasColumn('reservations', 'event_date')) {
             Schema::table('reservations', function (Blueprint $table) {
                 $table->date('event_date')->nullable()->after('return_date');

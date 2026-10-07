@@ -3,9 +3,12 @@
     <div class="sb-page">
 
         <div class="sb-wrap">
+
+            {{-- PAGE HEADER --}}
             <div class="sb-heading">
 
                 <div>
+                    <span class="sb-kicker">ANALYTICS</span>
 
                     <h1>
                         Business <em>reports.</em>
@@ -37,19 +40,19 @@
                         </div>
                         <button class="sb-report-filter-button" type="submit">Apply</button>
                     </form>
+
                     <div class="sb-report-actions">
                         <a class="sb-report-export-link"
-                            href="{{ route('owner.reports.pdf', request()->only(['period', 'start_date', 'end_date'])) }}">Download
-                            PDF</a>
+                            href="{{ route('owner.reports.pdf', request()->only(['period', 'start_date', 'end_date'])) }}">
+                            Download PDF
+                        </a>
                     </div>
                 </div>
 
             </div>
 
 
-            {{-- =========================================
-            SUMMARY CARDS
-            ========================================== --}}
+            {{-- SUMMARY CARDS --}}
             <div class="sb-report-stats">
 
                 {{-- Reservations --}}
@@ -64,7 +67,7 @@
                     <small>{{ $period['label'] }}</small>
                 </div>
 
-                {{-- Active Rentals (not affected by the period) --}}
+                {{-- Active rentals (not affected by the period) --}}
                 <div class="sb-report-stat">
                     <div class="sb-report-stat-top">
                         <span>Active rentals</span>
@@ -103,15 +106,10 @@
             </div>
 
 
-            {{-- =========================================
-            REPORT CONTENT
-            ========================================== --}}
+            {{-- REPORT CONTENT --}}
             <div class="sb-report-grid">
 
-
-                {{-- =====================================
-                MONTHLY RESERVATIONS
-                ====================================== --}}
+                {{-- MONTHLY RESERVATIONS --}}
                 <section class="sb-report-panel sb-monthly-panel">
 
                     <div class="sb-report-panel-head">
@@ -119,7 +117,8 @@
                         <div>
                             <span class="sb-panel-kicker">RESERVATIONS</span>
                             <h2>Monthly reservations</h2>
-                            <p>{{ \Illuminate\Support\Carbon::parse($period['start_date'])->format('M j, Y') }} –
+                            <p>
+                                {{ \Illuminate\Support\Carbon::parse($period['start_date'])->format('M j, Y') }} –
                                 {{ \Illuminate\Support\Carbon::parse($period['end_date'])->format('M j, Y') }}
                             </p>
                         </div>
@@ -138,7 +137,6 @@
                                     $barHeight = $isZero ? 3 : max(14, ($month['value'] / $maxValue) * 135);
                                 @endphp
                                 <div class="sb-chart-column" title="{{ $month['label'] }}: {{ $month['value'] }}">
-                                    {{-- only months with bookings get a number, so empty months stay quiet --}}
                                     @unless($isZero)
                                         <div class="sb-chart-value">{{ $month['value'] }}</div>
                                     @endunless
@@ -170,41 +168,56 @@
                     </div>
 
 
-                    @forelse($popular as $index => $gown)
+                    <div class="sb-rank-list">
 
-                        <div class="sb-rank">
+                        @forelse($popular as $index => $gown)
 
-                            <div class="sb-rank-number">{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</div>
+                            <div class="sb-rank">
 
-                            <div class="sb-rank-info">
-                                <strong>{{ $gown->name }}</strong>
-                                <small>{{ $gown->category->name ?? 'Collection' }}</small>
-
-                                <div class="sb-rank-bar-track"
-                                    aria-label="{{ $gown->reservation_items_count }} reservations">
-                                    <span
-                                        style="width: {{ max(6, ($gown->reservation_items_count / max($popularMax, 1)) * 100) }}%;"></span>
+                                <div class="sb-rank-number {{ $index === 0 ? 'is-top' : '' }}">
+                                    {{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}
                                 </div>
+
+                                <div class="sb-rank-thumb">
+                                    @if($gown->image)
+                                        <img src="{{ asset('storage/' . $gown->image) }}" alt="{{ $gown->name }}"
+                                            loading="lazy">
+                                    @else
+                                        <span aria-hidden="true">✿</span>
+                                    @endif
+                                </div>
+
+                                <div class="sb-rank-info">
+                                    <strong>{{ $gown->name }}</strong>
+                                    <small>{{ $gown->category->name ?? 'Collection' }}</small>
+
+                                    <div class="sb-rank-bar-track"
+                                        aria-label="{{ $gown->reservation_items_count }} reservations">
+                                        <span
+                                            style="width: {{ max(6, ($gown->reservation_items_count / max($popularMax, 1)) * 100) }}%;"></span>
+                                    </div>
+                                </div>
+
+                                <div class="sb-rank-count">
+                                    <strong>{{ $gown->reservation_items_count }}</strong>
+                                    <small>{{ $gown->reservation_items_count === 1 ? 'reservation' : 'reservations' }}</small>
+                                </div>
+
                             </div>
 
-                            <div class="sb-rank-count">
-                                <strong>{{ $gown->reservation_items_count }}</strong>
-                                <small>{{ $gown->reservation_items_count === 1 ? 'reservation' : 'reservations' }}</small>
+                        @empty
+
+                            <div class="sb-report-empty">
+                                <div class="sb-empty-icon"><svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <use href="#sb-i-dress" />
+                                    </svg></div>
+                                <h3>No reservation data yet</h3>
+                                <p>Gown popularity will appear here after the first reservation is recorded.</p>
                             </div>
 
-                        </div>
+                        @endforelse
 
-                    @empty
-
-                        <div class="sb-report-empty">
-                            <div class="sb-empty-icon"><svg viewBox="0 0 24 24" aria-hidden="true">
-                                    <use href="#sb-i-dress" />
-                                </svg></div>
-                            <h3>No reservation data yet</h3>
-                            <p>Gown popularity will appear here after the first reservation is recorded.</p>
-                        </div>
-
-                    @endforelse
+                    </div>
 
                 </section>
 
@@ -216,7 +229,6 @@
 
 
     {{-- REPORT PAGE STYLES (cream / maroon / gold, same as the rest of the system) --}}
-
     <style>
         .sb-page {
             --r-cream: #f8f0d6;
@@ -316,6 +328,18 @@
             font: 12px 'DM Sans', sans-serif;
         }
 
+        /* Period select shows a dropdown arrow so it reads as a dropdown */
+        .sb-report-period select {
+            appearance: none;
+            -webkit-appearance: none;
+            padding-right: 30px;
+            cursor: pointer;
+            background-color: #fff;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a67c2e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 11px center;
+        }
+
         .sb-report-custom-range {
             display: flex;
             flex-wrap: wrap;
@@ -371,7 +395,7 @@
             outline-offset: 2px;
         }
 
-        /* STAT CARDS: four identical cards */
+        /* STAT CARDS: four identical cards with a gold accent strip */
         .sb-report-stats {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -382,12 +406,36 @@
         .sb-report-stat {
             position: relative;
             min-height: 125px;
-            padding: 19px 20px;
+            padding: 19px 20px 19px 24px;
             background: var(--r-card);
             border: 1px solid var(--r-line);
             border-radius: 20px;
             box-shadow: 0 10px 26px rgba(107, 0, 32, .08);
+            overflow: hidden;
             transition: transform .2s ease, box-shadow .2s ease;
+        }
+
+        .sb-report-stat::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 18px;
+            bottom: 18px;
+            width: 4px;
+            border-radius: 0 4px 4px 0;
+            background: #b8902f;
+        }
+
+        .sb-report-stat:nth-child(2)::before {
+            background: #6b0020;
+        }
+
+        .sb-report-stat:nth-child(3)::before {
+            background: #2f7d4f;
+        }
+
+        .sb-report-stat:nth-child(4)::before {
+            background: #c9821a;
         }
 
         .sb-report-stat:hover {
@@ -455,11 +503,12 @@
             line-height: 1.4;
         }
 
-        /* REPORT GRID */
+        /* REPORT GRID: panels size to their content, so a short list is not padded out */
         .sb-report-grid {
             display: grid;
             grid-template-columns: 1.6fr 1fr;
             gap: 16px;
+            align-items: start;
         }
 
         .sb-report-panel {
@@ -513,7 +562,7 @@
             white-space: nowrap;
         }
 
-        /* CHART: gridlines, quiet empty months */
+        /* CHART: bars are labelled with their value, empty months stay almost invisible */
         .sb-chart {
             height: 225px;
             display: flex;
@@ -521,9 +570,6 @@
             justify-content: space-between;
             gap: 9px;
             padding: 20px 22px 17px;
-            background-image: repeating-linear-gradient(to top, transparent 0 43px, rgba(166, 124, 46, .14) 43px 44px);
-            background-position: 0 -26px;
-            background-clip: content-box;
         }
 
         .sb-chart-column {
@@ -536,7 +582,6 @@
             min-width: 0;
         }
 
-        /* number above a bar: plain maroon text (no grey tag) */
         html body .sb-chart-value {
             min-height: 0;
             margin-bottom: 5px;
@@ -556,9 +601,10 @@
         }
 
         .sb-chart-bar.is-zero {
-            width: 17px;
+            width: 8px;
+            height: 3px !important;
             border-radius: 2px;
-            background: #e5d3a3 !important;
+            background: #eadcb2 !important;
         }
 
         .sb-chart-column:hover .sb-chart-bar:not(.is-zero) {
@@ -575,25 +621,20 @@
             min-height: 225px;
             margin: 14px 22px 22px;
             border-radius: 12px;
-            background: repeating-linear-gradient(to top, transparent 0 44px, rgba(166, 124, 46, .12) 44px 45px);
         }
 
         /* POPULAR GOWNS */
-        .sb-popular-panel {
-            min-height: 300px;
+        .sb-rank-list {
+            margin-top: 17px;
         }
 
         .sb-rank {
             display: flex;
             align-items: center;
             gap: 13px;
-            padding: 15px 23px;
+            padding: 14px 23px;
             border-top: 1px solid rgba(217, 192, 137, .5);
             transition: background .15s ease;
-        }
-
-        .sb-rank:first-of-type {
-            margin-top: 17px;
         }
 
         .sb-rank:hover {
@@ -613,9 +654,29 @@
             font-variant-numeric: lining-nums;
         }
 
-        .sb-rank:first-of-type .sb-rank-number {
+        .sb-rank-number.is-top {
             background: var(--r-maroon);
             color: #f0d79a;
+        }
+
+        .sb-rank-thumb {
+            flex: 0 0 44px;
+            width: 44px;
+            height: 58px;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            border: 1px solid var(--r-line);
+            border-radius: 10px;
+            background: #f3e6c4;
+            color: var(--r-gold);
+        }
+
+        .sb-rank-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top center;
         }
 
         .sb-rank-info {

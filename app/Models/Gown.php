@@ -25,6 +25,8 @@ class Gown extends Model
         'condition',
         'status',
         'date_purchased',
+        'archived_at',
+        'archived_status',
     ];
 
     protected $casts = [
@@ -32,6 +34,7 @@ class Gown extends Model
         'security_deposit' => 'decimal:2',
         'purchase_price' => 'decimal:2',
         'date_purchased' => 'date',
+        'archived_at' => 'datetime',
     ];
 
     public function category()

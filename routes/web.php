@@ -13,7 +13,7 @@ use App\Http\Controllers\ProfileController;
 
 
 Route::get('/', function () {
-    $featuredGowns = \App\Models\Gown::with('category')->where('status', 'available')->latest()->take(3)->get();
+    $featuredGowns = \App\Models\Gown::with('category')->whereNull('archived_at')->where('status', 'available')->latest()->take(3)->get();
     return view('welcome', compact('featuredGowns'));
 });
 
@@ -65,7 +65,9 @@ Route::middleware(['auth', 'role:owner'])
         Route::put('/settings', [ManagementController::class, 'saveSettings'])->name('settings.save');
 
         Route::resource('categories', CategoryController::class);
-        Route::resource('gowns', GownController::class);
+        Route::resource('gowns', GownController::class)->except('destroy');
+        Route::post('/gowns/{gown}/archive', [GownController::class, 'archive'])->name('gowns.archive');
+        Route::patch('/gowns/{gown}/restore', [GownController::class, 'restore'])->name('gowns.restore');
         Route::resource('accessories', AccessoryController::class);
 
     });

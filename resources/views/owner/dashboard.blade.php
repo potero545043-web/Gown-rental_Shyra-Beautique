@@ -45,9 +45,7 @@
                 </a>
 
             </div>
-            <!-- ================================================= -->
-            <!-- STATS -->
-            <!-- ================================================= -->
+            <!--  STATS   -->
 
             <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-8">
 
@@ -208,9 +206,7 @@
                                         Recent Reservations
                                     </h2>
 
-                                    <span class="text-[#C9A46A]">
-                                        ✦
-                                    </span>
+
 
                                 </div>
 
@@ -300,7 +296,7 @@
                                         <td class="px-6 py-4">
 
                                             <span
-                                                class="inline-flex px-2.5 py-1 rounded-full bg-[#F8EEF2] text-[#5C1A2B] text-xs font-medium capitalize">
+                                                class="inline-flex px-2.5 py-1 rounded-full bg-[#F8EEF2] text-[#5C1A2B] text-xs font-medium capitalize sb-dash-status sb-dash-status-{{ $reservation->status }}">
 
                                                 {{ str_replace('_', ' ', $reservation->status) }}
 
@@ -368,9 +364,7 @@
                                         Recently Added
                                     </h2>
 
-                                    <span class="text-[#C9A46A]">
-                                        ✦
-                                    </span>
+
 
                                 </div>
 
@@ -397,9 +391,17 @@
                             <div class="group flex items-center gap-4 py-4 border-b border-[#F3E9ED] last:border-0">
 
                                 <!-- Gown Icon -->
+                                <!-- Gown Image -->
                                 <div
-                                    class="w-12 h-12 shrink-0 rounded-xl bg-[#F8EEF2] flex items-center justify-center text-[#B76E79] text-xl transition group-hover:scale-105">
-                                    ✿
+                                    class="w-12 h-12 shrink-0 rounded-xl overflow-hidden bg-[#F8EEF2] flex items-center justify-center text-[#B76E79] text-xl transition group-hover:scale-105">
+
+                                    @if($gown->image)
+                                        <img src="{{ asset('storage/' . $gown->image) }}" alt="{{ $gown->name }}"
+                                            class="w-full h-full object-cover" loading="lazy">
+                                    @else
+                                        <span>✿</span>
+                                    @endif
+
                                 </div>
 
 

@@ -82,7 +82,7 @@
                                             &#8369;{{ number_format($reservation->balance, 2) }}</small>
                                     </td>
                                     <td data-label="Status"><span
-                                            class="sb-status">{{ ucfirst(str_replace('_', ' ', $reservation->status)) }}</span>
+                                            class="sb-status sb-status-{{ $reservation->status }}">{{ ucfirst(str_replace('_', ' ', $reservation->status)) }}</span>
                                         @if($reservation->status === 'cancelled')
                                             @php
                                                 $retainedDownPayment = (float) $reservation->payments
@@ -98,6 +98,7 @@
                                         <details class="sb-row-actions">
                                             <summary aria-label="Manage reservation">Manage</summary>
                                             <div class="sb-row-actions-panel">
+                                                <button type="button" class="sb-row-actions-close" aria-label="Close reservation actions">×</button>
                                                 {{-- customers.show exists for the owner only --}}
                                                 @if($reservation->customer && $base === 'owner')
                                                     <a class="sb-small-btn"
@@ -185,6 +186,23 @@
             <div class="sb-pagination">{{ $reservations->links() }}</div>
         </div>
     </div>
+
+    <script>
+        (() => {
+            const closeOpenActions = () => document.querySelectorAll('.sb-row-actions[open]').forEach(item => item.open = false);
+            document.addEventListener('click', event => {
+                const closeButton = event.target.closest('.sb-row-actions-close');
+                if (closeButton) {
+                    closeButton.closest('.sb-row-actions').open = false;
+                    return;
+                }
+                if (!event.target.closest('.sb-row-actions')) closeOpenActions();
+            });
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape') closeOpenActions();
+            });
+        })();
+    </script>
 
     <style>
         .sb-filterbar {

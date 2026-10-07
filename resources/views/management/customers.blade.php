@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="sb-page">
+    <div class="sb-page sb-customers-page">
         <div class="sb-wrap">
             <div class="sb-heading">
                 <div>

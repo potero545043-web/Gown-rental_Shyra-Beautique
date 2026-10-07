@@ -19,6 +19,11 @@ class GownController extends Controller
                 fn($reservations) => $reservations->whereNotIn('status', ['cancelled', 'rejected'])
             ),
         ])->latest();
+        if ($request->boolean('archived')) {
+            $query->whereNotNull('archived_at');
+        } else {
+            $query->whereNull('archived_at');
+        }
         if ($request->filled('q')) {
             $term = $request->string('q');
             $query->where(fn($builder) => $builder->where('name', 'like', "%$term%")
@@ -42,6 +47,29 @@ class GownController extends Controller
         ];
 
         return view('gowns.index', compact('gowns', 'categories', 'accessories', 'inventoryStats'));
+    }
+
+    public function archive(Gown $gown)
+    {
+        abort_if(in_array($gown->status, ['reserved', 'rented'], true), 422, 'A reserved or rented gown cannot be archived.');
+        abort_if($gown->archived_at, 422, 'This gown is already archived.');
+
+        $gown->update(['archived_at' => now(), 'archived_status' => $gown->status]);
+
+        return redirect()->route('owner.gowns.index', ['archived' => 1])->with('success', 'Gown archived. You can restore it anytime from this archive.');
+    }
+
+    public function restore(Gown $gown)
+    {
+        abort_unless($gown->archived_at, 422, 'This gown is not archived.');
+
+        $gown->update([
+            'status' => $gown->archived_status ?: 'available',
+            'archived_at' => null,
+            'archived_status' => null,
+        ]);
+
+        return redirect()->route('owner.gowns.index')->with('success', 'Gown restored to active inventory.');
     }
 
 
@@ -249,6 +277,7 @@ class GownController extends Controller
         Request $request,
         Gown $gown
     ) {
+        $wasArchived = (bool) $gown->archived_at;
         $validated = $request->validate([
             'category_id' => [
                 'required',
@@ -372,7 +401,7 @@ class GownController extends Controller
 
 
         return redirect()
-            ->route('owner.gowns.index')
+            ->route('owner.gowns.index', $wasArchived ? ['archived' => 1] : [])
             ->with(
                 'success',
                 'Gown updated successfully.'

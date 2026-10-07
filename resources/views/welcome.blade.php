@@ -51,6 +51,34 @@
             overflow-x: hidden;
         }
 
+        /* Make the featured-card reservation links read as clear actions. */
+        a.sb-home-reserve-button,
+        a.sb-home-reserve-button:visited {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            min-height: 38px !important;
+            padding: 0 16px !important;
+            border: 1px solid #64182d !important;
+            border-radius: 999px !important;
+            background: #64182d !important;
+            color: #fffaf1 !important;
+            font-family: 'DM Sans', sans-serif !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            line-height: 1 !important;
+            text-decoration: none !important;
+            white-space: nowrap !important;
+            box-shadow: 0 5px 12px rgba(94, 18, 41, .16) !important;
+        }
+
+        a.sb-home-reserve-button:hover {
+            background: #7a2038 !important;
+            border-color: #7a2038 !important;
+            color: #fffaf1 !important;
+            transform: translateY(-1px);
+        }
+
 
         /* ================================
        SHADOWS
@@ -400,7 +428,7 @@
 
 
                     <h1
-                        class="font-display text-5xl sm:text-6xl lg:text-7xl leading-[1.05] text-[#5E1229] font-semibold">
+                        class="font-display text-5xl sm:text-6xl lg:text-[4.25rem] leading-[1.03] text-[#5E1229] font-semibold">
 
                         Elegant Gowns
 
@@ -413,7 +441,7 @@
                     </h1>
 
 
-                    <p class="mt-7 text-lg leading-8 text-[#4A3C26] max-w-xl">
+                    <p class="mt-7 font-body text-[17px] leading-[1.75] text-[#4A3C26] max-w-xl">
 
                         Find a gown that makes you feel confident,
                         beautiful, and unforgettable. Discover elegant
@@ -653,7 +681,7 @@
 
                                 </span>
 
-                                <a href="{{ route('register') }}" class="text-sm font-semibold text-[#9A7633]">
+                                <a href="{{ route('register') }}" class="sb-home-reserve-button">
 
                                     Reserve Now
 
@@ -708,7 +736,7 @@
 
                                 </span>
 
-                                <a href="{{ route('register') }}" class="text-sm font-semibold text-[#9A7633]">
+                                <a href="{{ route('register') }}" class="sb-home-reserve-button">
 
                                     Reserve Now
 
@@ -763,7 +791,7 @@
 
                                 </span>
 
-                                <a href="{{ route('register') }}" class="text-sm font-semibold text-[#9A7633]">
+                                <a href="{{ route('register') }}" class="sb-home-reserve-button">
 
                                     Reserve Now
 
@@ -818,7 +846,7 @@
 
                                 </span>
 
-                                <a href="{{ route('register') }}" class="text-sm font-semibold text-[#9A7633]">
+                                <a href="{{ route('register') }}" class="sb-home-reserve-button">
 
                                     Reserve Now
 

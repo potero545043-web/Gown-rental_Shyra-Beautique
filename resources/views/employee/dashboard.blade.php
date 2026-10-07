@@ -88,7 +88,7 @@
                                             {{ $booking->return_date?->format('M d') }}
                                         </td>
                                         <td>
-                                            <span class="sb-status">
+                                            <span class="sb-status sb-status-{{ $booking->status }}">
                                                 {{ ucfirst(str_replace('_', ' ', $booking->status)) }}
                                             </span>
                                         </td>
@@ -223,6 +223,11 @@
 
         .sb-emp .sb-stat {
             position: relative;
+            display: grid !important;
+            grid-template-columns: 36px minmax(0, 1fr) auto !important;
+            grid-template-rows: auto auto;
+            align-items: center;
+            column-gap: 12px;
             background: var(--e-card) !important;
             border: 1px solid var(--e-line) !important;
             border-radius: 20px !important;
@@ -230,13 +235,37 @@
             color: var(--e-maroon);
         }
 
+        .sb-emp .sb-stat::before {
+            content: "";
+            position: absolute;
+            inset: 20px auto 20px 0;
+            width: 4px;
+            border-radius: 0 4px 4px 0;
+            background: var(--e-gold);
+        }
+
+        .sb-emp .sb-stat:nth-child(2)::before { background: #438b59; }
+        .sb-emp .sb-stat:nth-child(3)::before { background: #c9821a; }
+        .sb-emp .sb-stat:nth-child(4)::before { background: #d9b878; }
+
         .sb-emp .sb-stat span {
+            grid-column: 2;
+            grid-row: 1;
             color: var(--e-muted) !important;
+            font-size: 10px !important;
+            font-weight: 700 !important;
+            letter-spacing: .08em !important;
+            text-transform: uppercase;
         }
 
         .sb-emp .sb-stat b {
+            grid-column: 3;
+            grid-row: 1 / span 2;
+            justify-self: end;
+            text-align: right;
             color: var(--e-maroon) !important;
             font-weight: 600 !important;
+            font-size: 27px !important;
         }
 
         .sb-emp .sb-stat b .sb-of {
@@ -247,14 +276,16 @@
         }
 
         .sb-emp .sb-stat small {
+            grid-column: 2;
+            grid-row: 2;
             color: var(--e-muted) !important;
             display: block;
         }
 
         .sb-emp .sb-stat i {
-            position: absolute;
-            top: 18px;
-            right: 18px;
+            position: static;
+            grid-column: 1;
+            grid-row: 1 / span 2;
             width: 36px;
             height: 36px;
             display: grid;

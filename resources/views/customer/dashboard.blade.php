@@ -8,7 +8,7 @@
             <section class="sb-customer-hero">
                 <div class="sb-customer-hero-copy">
                     <span class="sb-kicker">ACCOUNT OVERVIEW</span>
-                    <h1>Welcome back, <em>{{ auth()->user()->name }}</em></h1>
+                    <h1>Welcome, <em>{{ auth()->user()->name }}</em></h1>
                     <p>Find the gown for your next special occasion.</p>
                     <div class="sb-customer-hero-actions">
                         <a class="sb-btn" href="{{ route('customer.catalog') }}">Browse collection
@@ -110,7 +110,7 @@
                         <h2>Upcoming rentals &amp; returns</h2>
                         <p>Keep track of gown pickup and return dates.</p>
                     </div>
-                    <a class="sb-text-link" href="{{ route('customer.reservations') }}">View all reservations <span
+                    <a class="sb-customer-reservations-button" href="{{ route('customer.reservations') }}">View all reservations <span
                             aria-hidden="true">&rarr;</span></a>
                 </div>
 
@@ -139,8 +139,17 @@
                     </article>
                 @empty
                     <div class="sb-customer-rentals-empty">
-                        <strong>You don't have any upcoming rentals yet.</strong>
-                        <p>Explore the collection and find a gown for your next special occasion.</p>
+                        <span class="sb-customer-rentals-empty-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 3a1.5 1.5 0 0 0-1.5 1.5c0 .7.4 1.3 1 1.6L9 8h6l-2.5-1.9c.6-.3 1-.9 1-1.6A1.5 1.5 0 0 0 12 3Z" />
+                                <path d="M9 8 4.6 18.2a1 1 0 0 0 .9 1.4h12.9a1 1 0 0 0 .9-1.4L15 8" />
+                            </svg>
+                        </span>
+                        <div class="sb-customer-rentals-empty-copy">
+                            <strong>You don't have any upcoming rentals yet.</strong>
+                            <p>Explore the collection and find a gown for your next special occasion.</p>
+                        </div>
                         <a class="sb-text-link" href="{{ route('customer.catalog') }}">Browse collection <span
                                 aria-hidden="true">&rarr;</span></a>
                     </div>

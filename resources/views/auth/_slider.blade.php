@@ -553,6 +553,7 @@
     .sa-copy h1 {
         margin: 0 0 14px;
         font: 400 40px/1.15 'Playfair Display', serif;
+        color: #fff8eb;
     }
 
     .sa-copy h1 span {

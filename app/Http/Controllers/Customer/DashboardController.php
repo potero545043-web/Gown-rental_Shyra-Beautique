@@ -31,10 +31,10 @@ class DashboardController extends Controller
             ->orderBy('pickup_date')
             ->take(5)
             ->get() : collect();
-        $gownOptions = Gown::where('status', '!=', 'retired')->get(['size', 'style', 'color']);
+        $gownOptions = Gown::whereNull('archived_at')->where('status', '!=', 'retired')->get(['size', 'style', 'color']);
 
         return view('customer.dashboard', [
-            'featured' => Gown::with('category')->whereIn('status', ['available', 'reserved', 'rented'])->latest()->take(4)->get(),
+            'featured' => Gown::with('category')->whereNull('archived_at')->whereIn('status', ['available', 'reserved', 'rented'])->latest()->take(4)->get(),
             'rentals' => $rentals,
             'filterOptions' => [
                 'sizes' => $gownOptions->pluck('size')->filter()->unique()->sort()->values(),
@@ -46,7 +46,7 @@ class DashboardController extends Controller
 
     public function catalog()
     {
-        $gowns = Gown::with('category')->where('status', '!=', 'retired')->latest()->get();
+        $gowns = Gown::with('category')->whereNull('archived_at')->where('status', '!=', 'retired')->latest()->get();
         return view('customer.catalog', compact('gowns'));
     }
 
@@ -158,7 +158,7 @@ class DashboardController extends Controller
 
         try {
             $reservation = DB::transaction(function () use ($request, $gown, $customer, $user, $data, $measurements, $lateFeePerDay) {
-                $lockedGown = Gown::whereKey($gown->id)->lockForUpdate()->firstOrFail();
+                $lockedGown = Gown::whereNull('archived_at')->whereKey($gown->id)->lockForUpdate()->firstOrFail();
                 abort_unless(in_array($lockedGown->status, ['available', 'reserved', 'rented'], true), 422, 'This gown cannot be reserved at this time.');
                 $conflicts = $this->conflictsFor($lockedGown, Carbon::parse($data['pickup_date']), Carbon::parse($data['return_date']));
                 if ($conflicts) {
