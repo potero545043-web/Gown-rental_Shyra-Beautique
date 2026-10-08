@@ -1,0 +1,18 @@
+# Never upload the Vite dev-server marker or dev assets to Vercel.
+# When public/hot is present, Laravel serves http://[::1]:5173 dev assets
+# instead of the built production bundle, breaking the deployed site.
+public/hot
+
+# Local development and tooling cruft
+node_modules
+.env
+.env.*
+!.env.example
+.vercel
+storage/logs/*
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+.git
+.gitignore
+README.md
