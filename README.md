@@ -23,7 +23,7 @@ Laravel is accessible, powerful, and provides tools required for large, robust a
 
 ## Vercel deployment
 
-The Vercel adapter in `vercel.json` builds the Vite assets, routes Laravel through the PHP runtime, and exposes a server-side Vercel Blob bridge. Public gown and accessory images use a public Blob store. Government ID images use a separate private Blob store and are delivered only through the existing authenticated Laravel routes.
+The Vercel adapter in `vercel.json` builds the Vite assets into Laravel's `public` directory, routes Laravel through the PHP runtime, and exposes a server-side Vercel Blob bridge. Public gown and accessory images use a public Blob store. Government ID images use a separate private Blob store and are delivered only through the existing authenticated Laravel routes.
 
 Before creating a deployment:
 
