@@ -16,7 +16,7 @@
       "dest": "/api/blob.js"
     },
     {
-      "src": "/(.*)",
+      "src": "/(?!api/)(.*\\.(?:css|js|mjs|map|png|jpe?g|gif|svg|webp|avif|ico|woff2?|ttf|eot|otf|pdf|txt|xml|json|webmanifest|mp4|webm|mp3|wav|zip))$",
       "dest": "/$1",
       "check": true
     },
