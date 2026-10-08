@@ -4,8 +4,10 @@ use App\Models\Category;
 use App\Models\Customer;
 use App\Models\Gown;
 use App\Models\Reservation;
+use App\Models\GownReturn;
 use App\Models\User;
 use App\Notifications\ReservationLifecycleNotification;
+use App\Notifications\StaffActivityNotification;
 use Illuminate\Support\Carbon;
 
 beforeEach(function () {
@@ -177,6 +179,128 @@ it('sends return and overdue reminders to the customer', function () {
         ->toBeTrue()
         ->and($this->customerUser->fresh()->notifications()->where('data->event', 'overdue')->exists())
         ->toBeTrue();
+});
+
+it('sends deduplicated pickup reminders to employees and owners', function () {
+    $owner = User::factory()->create(['role' => 'owner']);
+    $employee = User::factory()->create(['role' => 'employee']);
+    $this->reservation->update([
+        'status' => 'confirmed',
+        'pickup_date' => Carbon::tomorrow()->toDateString(),
+    ]);
+
+    $this->artisan('app:send-reservation-reminders')->assertSuccessful();
+
+    foreach ([$owner, $employee] as $staffUser) {
+        expect($staffUser->fresh()->notifications()->where('data->event', 'pickup_reminder')->exists())
+            ->toBeTrue();
+    }
+
+    $this->artisan('app:send-reservation-reminders')->assertSuccessful();
+
+    foreach ([$owner, $employee] as $staffUser) {
+        expect($staffUser->fresh()->notifications()->where('data->event', 'pickup_reminder')->count())
+            ->toBe(1);
+    }
+});
+
+it('notifies owners and employees when a customer submits a reservation', function () {
+    $owner = User::factory()->create(['role' => 'owner']);
+    $employee = User::factory()->create(['role' => 'employee']);
+    $reservation = Reservation::create([
+        'reservation_code' => 'GR-STAFF-001',
+        'customer_id' => $this->customer->id,
+        'pickup_date' => today()->addDays(7),
+        'return_date' => today()->addDays(8),
+        'rental_total' => 2500,
+        'grand_total' => 2500,
+        'balance' => 2500,
+        'status' => 'pending',
+    ]);
+    $reservation->items()->create([
+        'gown_id' => $this->gown->id,
+        'rental_price' => 2500,
+    ]);
+
+    foreach ([$owner, $employee] as $staffUser) {
+        $notification = $staffUser->fresh()->notifications()->where('data->event', 'new_reservation')->firstOrFail();
+        expect($notification->data['message'])->toContain('Blue Evening Gown')
+            ->and($notification->data['message'])->toContain($this->customer->full_name)
+            ->and($notification->data['url'])->toContain('/' . $staffUser->role . '/reservations');
+    }
+});
+
+it('notifies employees of reservation changes and owners of cancellations', function () {
+    $owner = User::factory()->create(['role' => 'owner']);
+    $employee = User::factory()->create(['role' => 'employee']);
+    $this->reservation->update(['pickup_date' => today()->addDays(4)]);
+    $this->reservation->update(['status' => 'cancelled']);
+
+    expect($employee->fresh()->notifications()->where('data->event', 'reservation_updated')->exists())
+        ->toBeTrue()
+        ->and($employee->fresh()->notifications()->where('data->event', 'reservation_cancelled')->exists())
+        ->toBeFalse()
+        ->and($owner->fresh()->notifications()->where('data->event', 'reservation_cancelled')->exists())
+        ->toBeTrue();
+});
+
+it('notifies employees and owners when a gown is returned and sends employee activity to owners', function () {
+    $owner = User::factory()->create(['role' => 'owner']);
+    $employee = User::factory()->create(['role' => 'employee']);
+    GownReturn::create([
+        'reservation_id' => $this->reservation->id,
+        'processed_by' => $employee->id,
+        'actual_return_date' => today(),
+        'actual_return_time' => now()->format('H:i:s'),
+        'condition_after' => 'good',
+        'late_days' => 0,
+    ]);
+    $this->reservation->update(['status' => 'returned']);
+
+    expect($owner->fresh()->notifications()->where('data->event', 'gown_returned')->exists())
+        ->toBeTrue()
+        ->and($employee->fresh()->notifications()->where('data->event', 'gown_returned')->exists())
+        ->toBeTrue()
+        ->and($owner->fresh()->notifications()->where('data->event', 'employee_activity')->exists())
+        ->toBeTrue();
+});
+
+it('notifies owners when a customer registers and a gown status changes', function () {
+    $owner = User::factory()->create(['role' => 'owner']);
+    $newCustomer = User::factory()->create(['role' => 'customer']);
+    $this->gown->update(['status' => 'damaged']);
+
+    $gownStatusNotification = $owner->fresh()->notifications()
+        ->where('data->event', 'gown_status_changed')
+        ->firstOrFail();
+
+    expect($owner->fresh()->notifications()->where('data->event', 'new_customer')->exists())
+        ->toBeTrue()
+        ->and($gownStatusNotification->data['message'])
+        ->toContain('available to damaged')
+        ->and($newCustomer->fresh()->notifications()->count())
+        ->toBe(0);
+});
+
+it('provides private owner and employee notification inboxes', function () {
+    $owner = User::factory()->create(['role' => 'owner']);
+    $employee = User::factory()->create(['role' => 'employee']);
+    $owner->notify(new StaffActivityNotification('new_reservation', $this->reservation));
+
+    $this->actingAs($employee)
+        ->get(route('employee.notifications'))
+        ->assertOk()
+        ->assertSee('Employee notifications')
+        ->assertSee('No notifications yet');
+
+    $notification = $owner->notifications()->firstOrFail();
+    $this->post(route('employee.notifications.read', $notification->id))->assertNotFound();
+
+    $this->actingAs($owner)
+        ->get(route('owner.notifications'))
+        ->assertOk()
+        ->assertSee('Owner notifications')
+        ->assertSee('New reservation');
 });
 
 it('links owner dashboard reservations to payment records', function () {

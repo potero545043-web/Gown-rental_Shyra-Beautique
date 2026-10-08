@@ -14,6 +14,7 @@
         'owner' => [
             'OPERATIONS' => [
                 ['Overview', 'owner.dashboard', 'grid'],
+                ['Notifications', 'owner.notifications', 'bell'],
                 ['Catalog', 'owner.catalog', 'dress'],
                 ['Reservations', 'owner.reservations', 'calendar'],
                 ['Rentals & returns', 'owner.rentals', 'calendar'],
@@ -33,6 +34,7 @@
         'employee' => [
             'OPERATIONS' => [
                 ['Overview', 'employee.dashboard', 'grid'],
+                ['Notifications', 'employee.notifications', 'bell'],
                 ['Reservations', 'employee.reservations', 'calendar'],
                 ['Rentals & returns', 'employee.rentals', 'calendar'],
             ],
@@ -65,7 +67,7 @@
 
     $inventoryRoutes = ['owner.gowns.*', 'owner.categories.*', 'owner.accessories.*', 'owner.maintenance'];
     $hasPending = $role !== 'customer' && \App\Models\Reservation::where('status', 'pending')->exists();
-    $unreadNotifications = $role === 'customer' ? auth()->user()->unreadNotifications()->count() : 0;
+    $unreadNotifications = auth()->user()->unreadNotifications()->count();
 @endphp
 
 {{-- ICON LIBRARY --}}

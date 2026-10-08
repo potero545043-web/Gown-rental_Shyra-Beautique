@@ -9,6 +9,7 @@ use App\Http\Controllers\Owner\DashboardController as OwnerDashboardController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Customer\DashboardController as CustomerDashboardController;
 use App\Http\Controllers\Customer\NotificationController as CustomerNotificationController;
+use App\Http\Controllers\NotificationController as StaffNotificationController;
 use App\Http\Controllers\ManagementController;
 use App\Http\Controllers\ProfileController;
 
@@ -33,6 +34,9 @@ Route::middleware(['auth', 'role:owner'])
             OwnerDashboardController::class,
             'index'
         ])->name('dashboard');
+        Route::get('/notifications', [StaffNotificationController::class, 'index'])->name('notifications');
+        Route::post('/notifications/read-all', [StaffNotificationController::class, 'markAllRead'])->name('notifications.read-all');
+        Route::post('/notifications/{notification}/read', [StaffNotificationController::class, 'markRead'])->name('notifications.read');
 
         Route::get('/reservations', [ManagementController::class, 'reservations'])->name('reservations');
         Route::post('/reservations', [ManagementController::class, 'storeEmployeeReservation'])->name('reservations.store');
@@ -87,6 +91,9 @@ Route::middleware(['auth', 'role:employee'])
     ->group(function () {
 
         Route::get('/dashboard', [EmployeeDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/notifications', [StaffNotificationController::class, 'index'])->name('notifications');
+        Route::post('/notifications/read-all', [StaffNotificationController::class, 'markAllRead'])->name('notifications.read-all');
+        Route::post('/notifications/{notification}/read', [StaffNotificationController::class, 'markRead'])->name('notifications.read');
 
         // Reservations (table + add reservation -> catalog)
         Route::get('/reservations', [ManagementController::class, 'reservations'])->name('reservations');
