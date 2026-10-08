@@ -11,7 +11,7 @@
     <label>Condition<select name="condition" required>@foreach(['excellent', 'good', 'fair', 'damaged'] as $condition)<option value="{{ $condition }}" @selected(old('condition', $gown?->condition ?? 'good') === $condition)>{{ ucfirst($condition) }}</option>@endforeach</select></label>
     <label>Availability<select name="status" required>@foreach(['available', 'reserved', 'rented', 'for_cleaning', 'under_maintenance', 'damaged', 'unavailable', 'retired'] as $status)<option value="{{ $status }}" @selected(old('status', $gown?->status ?? 'available') === $status)>{{ ucfirst(str_replace('_', ' ', $status)) }}</option>@endforeach</select></label>
     <label>Date purchased<input type="date" name="date_purchased" value="{{ old('date_purchased', $gown?->date_purchased?->format('Y-m-d')) }}"></label>
-    <label>Gown image<input type="file" name="image" accept="image/jpeg,image/png,image/webp">@if($gown?->image)<small>Uploading a new image replaces the current one.</small>@endif</label>
+    <label>Gown image<input type="file" name="image" accept="image/jpeg,image/png,image/webp"><small>JPG, PNG or WEBP, up to 4 MB.@if($gown?->image) Uploading a new image replaces the current one.@endif</small></label>
 </div>
 <label>Description<textarea name="description" rows="3">{{ old('description', $gown?->description) }}</textarea></label>
 <label>Measurements<textarea name="measurements" rows="3" placeholder="Bust, waist, length, and other fit details">{{ old('measurements', $gown?->measurements) }}</textarea></label>

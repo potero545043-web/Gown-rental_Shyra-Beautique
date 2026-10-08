@@ -87,8 +87,8 @@
                                             <div class="sb-inventory-name">
 
                                                 <div class="sb-inventory-thumb">
-                                                    @if($accessory->image)
-                                                        <img src="{{ asset('storage/' . $accessory->image) }}"
+                                                    @if($accessory->image_url)
+                                                        <img src="{{ $accessory->image_url }}"
                                                             alt="{{ $accessory->name }}" loading="lazy">
                                                     @else
                                                         <span aria-hidden="true">✧</span>

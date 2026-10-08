@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Accessory;
 use App\Models\Gown;
+use App\Services\VercelBlobStorage;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class GownController extends Controller
@@ -173,7 +173,7 @@ class GownController extends Controller
                 'nullable',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:5120'
+                'max:4096'
             ],
 
             'condition' => [
@@ -217,11 +217,8 @@ class GownController extends Controller
 
 
         if ($request->hasFile('image')) {
-
-            $validated['image'] =
-                $request
-                    ->file('image')
-                    ->store('gowns', 'public');
+            $validated['image'] = app(VercelBlobStorage::class)
+                ->store($request->file('image'), 'gowns', 'public');
         }
 
 
@@ -340,7 +337,7 @@ class GownController extends Controller
                 'nullable',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:5120'
+                'max:4096'
             ],
 
             'condition' => [
@@ -379,24 +376,18 @@ class GownController extends Controller
         unset($validated['accessories']);
 
 
+        $previousImage = $gown->image;
         if ($request->hasFile('image')) {
-
-            if ($gown->image) {
-
-                Storage::disk('public')
-                    ->delete($gown->image);
-            }
-
-
-            $validated['image'] =
-                $request
-                    ->file('image')
-                    ->store('gowns', 'public');
+            $validated['image'] = app(VercelBlobStorage::class)
+                ->store($request->file('image'), 'gowns', 'public');
         }
 
 
         $validated['security_deposit'] = 0;
         $gown->update($validated);
+        if ($request->hasFile('image') && $previousImage) {
+            app(VercelBlobStorage::class)->delete($previousImage, 'public');
+        }
         $gown->accessories()->sync(collect($accessoryIds)->mapWithKeys(fn($id) => [$id => ['quantity' => 1]])->all());
 
 

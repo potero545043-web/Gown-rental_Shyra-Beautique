@@ -3,7 +3,10 @@
 use App\Models\Accessory;
 use App\Models\Category;
 use App\Models\User;
+use App\Services\VercelBlobStorage;
+use Illuminate\Http\Client\Request as ClientRequest;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
@@ -91,4 +94,64 @@ it('shows the uploaded accessory image in inventory and item details', function 
         ->assertOk()
         ->assertSee($imageUrl, false)
         ->assertSee('alt="Crystal tiara"', false);
+});
+
+it('stores Vercel inventory images in the public Blob store', function () {
+    $blobUrl = 'https://example.public.blob.vercel-storage.com/accessories/tiara.jpg';
+    config([
+        'services.vercel_blob.enabled' => true,
+        'services.vercel_blob.bridge_url' => 'https://gown-rental.vercel.app/api/blob',
+        'services.vercel_blob.bridge_secret' => str_repeat('s', 32),
+    ]);
+    Http::fake([
+        'https://gown-rental.vercel.app/api/blob' => Http::response(['url' => $blobUrl], 201),
+    ]);
+
+    $this->actingAs($this->owner)
+        ->post(route('owner.accessories.store'), [
+            'name' => 'Crystal tiara',
+            'description' => 'Silver accessory',
+            'image' => UploadedFile::fake()->image('tiara.jpg'),
+            'quantity' => 2,
+            'replacement_cost' => 500,
+            'status' => 'available',
+        ])
+        ->assertRedirect(route('owner.accessories.index'));
+
+    $accessory = Accessory::where('name', 'Crystal tiara')->firstOrFail();
+    expect($accessory->image)->toBe($blobUrl)
+        ->and($accessory->image_url)->toBe($blobUrl);
+
+    Http::assertSent(fn (ClientRequest $request) => $request->method() === 'PUT'
+        && $request->url() === 'https://gown-rental.vercel.app/api/blob'
+        && $request->header('X-Blob-Access')[0] === 'public'
+        && $request->header('X-Blob-Bridge-Secret')[0] === str_repeat('s', 32)
+        && preg_match('/^accessories\/[0-9a-f-]+\.jpg$/', $request->header('X-Blob-Path')[0]) === 1);
+});
+
+it('fetches private Blob files through the server bridge without exposing the token', function () {
+    config([
+        'services.vercel_blob.enabled' => true,
+        'services.vercel_blob.bridge_url' => 'https://gown-rental.vercel.app/api/blob',
+        'services.vercel_blob.bridge_secret' => str_repeat('s', 32),
+    ]);
+    Http::fake([
+        'https://gown-rental.vercel.app/api/blob' => Http::response('private-id-photo', 200, [
+            'Content-Type' => 'image/jpeg',
+        ]),
+    ]);
+
+    $response = app(VercelBlobStorage::class)->privateFileResponse(
+        'https://example.private.blob.vercel-storage.com/government-ids/id.jpg'
+    );
+
+    expect($response->getStatusCode())->toBe(200)
+        ->and($response->headers->get('Cache-Control'))->toContain('private')
+        ->toContain('no-store')
+        ->and($response->getContent())->toBe('private-id-photo');
+
+    Http::assertSent(fn (ClientRequest $request) => $request->method() === 'GET'
+        && $request->header('X-Blob-Access')[0] === 'private'
+        && $request->header('X-Blob-URL')[0] === 'https://example.private.blob.vercel-storage.com/government-ids/id.jpg'
+        && $request->header('X-Blob-Bridge-Secret')[0] === str_repeat('s', 32));
 });

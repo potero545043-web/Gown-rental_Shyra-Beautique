@@ -138,6 +138,7 @@
                                 <label>Live photo of valid physical government ID
                                     <input type="file" name="government_id" accept="image/jpeg,image/png,image/webp"
                                         capture="environment" required>
+                                    <small class="sb-field-hint">JPG, PNG or WEBP, up to 4 MB.</small>
                                 </label>
                                 <label>Secure safe slot
                                     <input name="id_safe_slot" value="{{ old('id_safe_slot') }}"

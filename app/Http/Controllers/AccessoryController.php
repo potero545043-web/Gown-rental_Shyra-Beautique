@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Accessory;
+use App\Services\VercelBlobStorage;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class AccessoryController extends Controller
@@ -43,7 +43,8 @@ class AccessoryController extends Controller
         $validated = $request->validate($this->rules());
 
         if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('accessories', 'public');
+            $validated['image'] = app(VercelBlobStorage::class)
+                ->store($request->file('image'), 'accessories', 'public');
         }
 
         Accessory::create($validated);
@@ -71,17 +72,18 @@ class AccessoryController extends Controller
     {
         $validated = $request->validate($this->rules());
 
+        $previousImage = $accessory->image;
         if ($request->hasFile('image')) {
-            if ($accessory->image) {
-                Storage::disk('public')->delete($accessory->image);
-            }
-
-            $validated['image'] = $request->file('image')->store('accessories', 'public');
+            $validated['image'] = app(VercelBlobStorage::class)
+                ->store($request->file('image'), 'accessories', 'public');
         } else {
             unset($validated['image']);
         }
 
         $accessory->update($validated);
+        if ($request->hasFile('image') && $previousImage) {
+            app(VercelBlobStorage::class)->delete($previousImage, 'public');
+        }
 
         return redirect()
             ->route('owner.accessories.index')

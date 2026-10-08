@@ -101,6 +101,7 @@
                                                             <label>Photo of physical ID
                                                                 <input type="file" name="physical_id_photo"
                                                                     accept="image/jpeg,image/png,image/webp" capture="environment" required>
+                                                                <small class="sb-field-hint">JPG, PNG or WEBP, up to 4 MB.</small>
                                                             </label>
                                                         @endunless
                                                         <label>Handoff note<input name="notes" placeholder="Optional note"></label>

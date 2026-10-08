@@ -1,0 +1,27 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/index.php": {
+      "runtime": "vercel-php@0.9.0"
+    },
+    "api/blob.js": {
+      "maxDuration": 60
+    }
+  },
+  "buildCommand": "composer install --no-dev --optimize-autoloader && npm run build",
+  "routes": [
+    {
+      "src": "/api/blob",
+      "dest": "/api/blob.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/public/$1",
+      "check": true
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.php"
+    }
+  ]
+}

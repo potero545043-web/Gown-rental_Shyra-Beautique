@@ -42,7 +42,7 @@
 
                     <label>Accessory image
                         <img id="accessory-preview" class="sb-image-preview" alt="{{ $accessory->name }}"
-                            @if($accessory->image) src="{{ asset('storage/' . $accessory->image) }}" style="display:block" @else hidden style="display:none"
+                            @if($accessory->image_url) src="{{ $accessory->image_url }}" style="display:block" @else hidden style="display:none"
                             @endif>
 
                         <input type="file" name="image" accept="image/png,image/jpeg,image/webp"

@@ -21,6 +21,20 @@ Laravel is a web application framework with expressive, elegant syntax. We belie
 
 Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
+## Vercel deployment
+
+The Vercel adapter in `vercel.json` builds the Vite assets, routes Laravel through the PHP runtime, and exposes a server-side Vercel Blob bridge. Public gown and accessory images use a public Blob store. Government ID images use a separate private Blob store and are delivered only through the existing authenticated Laravel routes.
+
+Before creating a deployment:
+
+1. Import this repository into Vercel and use the `Other` framework preset.
+2. Keep the existing Blob store private and create a second Blob store with public access. Connect both stores to the Vercel project, using the prefixes `PRIVATE_BLOB` and `PUBLIC_BLOB` for their generated store-ID variables. The SDK uses Vercel's automatically managed OIDC token; read-write tokens with the matching prefixes are only needed outside Vercel.
+3. Add a strong, random `BLOB_BRIDGE_SECRET` as a Vercel environment variable. Never put Blob tokens, the bridge secret, database passwords, or `APP_KEY` in Git or chat.
+4. Add the app environment variables in Vercel: `APP_ENV=production`, `APP_DEBUG=false`, a generated `APP_KEY`, `APP_URL`, `DB_CONNECTION=mysql`, `DB_HOST`, `DB_PORT=4000`, `DB_DATABASE=gownrentalsystem`, `DB_USERNAME`, `DB_PASSWORD`, `SESSION_DRIVER=database`, `CACHE_STORE=database`, and `QUEUE_CONNECTION=database`. The TiDB TLS root certificate is bundled at `certs/isrgrootx1.pem`; the MySQL connection verifies the server certificate using it by default on Vercel.
+5. Deploy to Preview first. Back up the intended TiDB database, then run `php artisan migrate --force` once from a secure deployment environment. Do not add migrations to the build command.
+
+The Blob bridge accepts only validated image uploads up to 4 MB, requires a server-only shared secret, and restricts private-file reads to private Blob URLs. Storage credentials must be configured in Vercel before testing uploads. Vercel's function request-size limits still apply, so larger files must be reduced before upload.
+
 ## Learning Laravel
 
 Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.

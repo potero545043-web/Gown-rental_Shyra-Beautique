@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\VercelBlobStorage;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -22,6 +23,11 @@ class Accessory extends Model
         'replacement_cost' => 'decimal:2',
         'quantity' => 'integer',
     ];
+
+    public function getImageUrlAttribute(): ?string
+    {
+        return app(VercelBlobStorage::class)->publicUrl($this->image);
+    }
 
     public function gowns()
     {

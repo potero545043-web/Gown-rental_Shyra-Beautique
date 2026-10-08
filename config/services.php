@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    'vercel_blob' => [
+        'enabled' => (bool) env('VERCEL', false),
+        'bridge_url' => env(
+            'VERCEL_BLOB_BRIDGE_URL',
+            env('VERCEL_URL') ? 'https://' . env('VERCEL_URL') . '/api/blob' : null
+        ),
+        'bridge_secret' => env('BLOB_BRIDGE_SECRET'),
+    ],
+
 ];

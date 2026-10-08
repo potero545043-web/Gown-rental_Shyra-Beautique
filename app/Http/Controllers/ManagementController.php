@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\{AuditLog, CleaningRecord, Customer, DamageReport, Employee, Gown, GownRelease, GownReturn, MaintenanceRecord, Payment, Penalty, Reservation, SystemSetting, User};
+use App\Services\VercelBlobStorage;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -10,7 +11,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class ManagementController extends Controller
@@ -53,7 +53,7 @@ class ManagementController extends Controller
             'waist' => ['nullable', 'numeric', 'min:0', 'max:300'],
             'hips' => ['nullable', 'numeric', 'min:0', 'max:300'],
             'length' => ['nullable', 'numeric', 'min:0', 'max:400'],
-            'government_id' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'government_id' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'id_safe_slot' => ['required', 'string', 'max:80'],
             'agreement_accepted' => ['accepted'],
             'payment_amount' => ['required', 'numeric', 'gt:0'],
@@ -77,7 +77,7 @@ class ManagementController extends Controller
                 'status' => 'active',
             ]);
         abort_unless($customer->status === 'active', 422, 'This customer account cannot make new reservations.');
-        $idPath = $request->file('government_id')->store('government-ids', 'local');
+        $idPath = app(VercelBlobStorage::class)->store($request->file('government_id'), 'government-ids', 'private');
         $measurements = collect(['Bust' => $data['bust'] ?? null, 'Waist' => $data['waist'] ?? null, 'Hips' => $data['hips'] ?? null, 'Length' => $data['length'] ?? null])
             ->filter(fn($value) => $value !== null)->map(fn($value, $key) => $key . ': ' . $value . ' cm')->values()->join('; ');
 
@@ -145,13 +145,15 @@ class ManagementController extends Controller
         $data = $request->validate([
             'condition_before' => ['required', Rule::in(['excellent', 'good', 'fair', 'damaged'])],
             'notes' => ['nullable', 'string', 'max:1000'],
-            'physical_id_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'physical_id_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'id_safe_slot' => ['required', 'string', 'max:80'],
         ]);
         if (!$reservation->physical_id_photo_path && !$request->hasFile('physical_id_photo')) {
             throw ValidationException::withMessages(['physical_id_photo' => 'Capture a photo of the physical ID before storing it.']);
         }
-        $physicalIdPath = $request->file('physical_id_photo')?->store('government-ids', 'local') ?? $reservation->physical_id_photo_path;
+        $physicalIdPath = $request->hasFile('physical_id_photo')
+            ? app(VercelBlobStorage::class)->store($request->file('physical_id_photo'), 'government-ids', 'private')
+            : $reservation->physical_id_photo_path;
         DB::transaction(function () use ($request, $reservation, $data, $physicalIdPath) {
             GownRelease::updateOrCreate(['reservation_id' => $reservation->id], [
                 'condition_before' => $data['condition_before'],
@@ -533,8 +535,7 @@ class ManagementController extends Controller
         } else {
             abort_unless(in_array($request->user()->role, ['owner', 'employee'], true), 403);
         }
-        abort_unless($payment->proof_of_payment && Storage::disk('local')->exists($payment->proof_of_payment), 404);
-        return response()->file(Storage::disk('local')->path($payment->proof_of_payment));
+        return app(VercelBlobStorage::class)->privateFileResponse($payment->proof_of_payment);
     }
 
     public function collateralPhoto(Request $request, Reservation $reservation, string $type)
@@ -542,8 +543,7 @@ class ManagementController extends Controller
         abort_unless(in_array($request->user()->role, ['owner', 'employee'], true), 403);
         abort_unless(in_array($type, ['digital', 'physical'], true), 404);
         $path = $type === 'physical' ? $reservation->physical_id_photo_path : $reservation->government_id_photo_path;
-        abort_unless($path && Storage::disk('local')->exists($path), 404);
-        return response()->file(Storage::disk('local')->path($path));
+        return app(VercelBlobStorage::class)->privateFileResponse($path);
     }
 
     public function recordPayment(Request $request, Reservation $reservation)
