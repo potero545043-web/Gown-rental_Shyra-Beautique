@@ -28,8 +28,8 @@
             <div class="sb-reserve-layout">
                 <aside class="sb-reserve-summary">
                     @if($gown)
-                        <a class="sb-reserve-summary-photo @if(!$gown->image) is-empty @endif" @if($gown->image)
-                        style="background-image:url('{{ asset('storage/' . $gown->image) }}')" @endif
+                        <a class="sb-reserve-summary-photo"
+                            style="background-image:url('{{ $gown->image_url }}')"
                             href="{{ route('customer.gowns.show', $gown) }}" aria-label="{{ $gown->name }}"></a>
                     @endif
                     <div class="sb-reserve-summary-body">

@@ -80,7 +80,7 @@
 
                                                 <div class="sb-inventory-thumb">
                                                     @if($record->gown && $record->gown->image)
-                                                        <img src="{{ asset('storage/' . $record->gown->image) }}"
+                                                        <img src="{{ $record->gown->image_url }}"
                                                             alt="{{ $record->gown->name }}" loading="lazy">
                                                     @else
                                                         <span aria-hidden="true">✿</span>

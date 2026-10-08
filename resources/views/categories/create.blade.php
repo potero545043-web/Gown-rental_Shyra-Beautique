@@ -23,7 +23,7 @@
 
             <section class="sb-panel sb-inventory-form-card">
 
-                <form method="POST" action="{{ route('owner.categories.store') }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('owner.categories.store') }}">
 
                     @csrf
 
@@ -39,13 +39,6 @@
                     <label>Description
                         <textarea name="description" rows="4"
                             placeholder="What kinds of gowns belong in this collection?">{{ old('description') }}</textarea>
-                    </label>
-
-                    <label>Category image
-                        <input type="file" name="image" accept="image/png,image/jpeg,image/webp"
-                            onchange="const f=this.files[0],p=document.getElementById('category-preview'); if(f){p.src=URL.createObjectURL(f); p.hidden=false;}">
-                        <img id="category-preview" class="sb-image-preview" alt="Image preview" hidden>
-                        <small class="sb-field-hint">JPG, PNG or WEBP, up to 2 MB.</small>
                     </label>
 
                     <div class="sb-inventory-form-actions">

@@ -37,7 +37,7 @@
                 ['Rentals & returns', 'employee.rentals', 'calendar'],
             ],
             'BUSINESS' => [
-                ['Gown catalog', 'employee.catalog', 'dress'],
+                ['Collection', 'employee.catalog', 'dress'],
                 ['Payments', 'employee.payments', 'card'],
             ],
         ],
@@ -47,6 +47,7 @@
                 ['Dashboard', 'customer.dashboard', 'grid'],
                 ['Collection', 'customer.catalog', 'dress'],
                 ['My Reservations', 'customer.reservations', 'calendar'],
+                ['Notifications', 'customer.notifications', 'bell'],
             ],
         ],
     };
@@ -64,6 +65,7 @@
 
     $inventoryRoutes = ['owner.gowns.*', 'owner.categories.*', 'owner.accessories.*', 'owner.maintenance'];
     $hasPending = $role !== 'customer' && \App\Models\Reservation::where('status', 'pending')->exists();
+    $unreadNotifications = $role === 'customer' ? auth()->user()->unreadNotifications()->count() : 0;
 @endphp
 
 {{-- ICON LIBRARY --}}
@@ -101,6 +103,9 @@
     <symbol id="sb-i-card" viewBox="0 0 24 24">
         <rect x="2.5" y="5" width="19" height="14" rx="2" />
         <path d="M3 10h18m-14 5h4" />
+    </symbol>
+    <symbol id="sb-i-bell" viewBox="0 0 24 24">
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12a2 2 0 0 0 4 0" />
     </symbol>
     <symbol id="sb-i-chart" viewBox="0 0 24 24">
         <path d="M3 3v18h18M8 16v-4m5 4V6m5 10V9" />
@@ -140,6 +145,9 @@
                     <span>{{ $label }}</span>
                     @if($label === 'Reservations' && $hasPending)
                         <i class="sb-side-dot"></i>
+                    @endif
+                    @if($label === 'Notifications' && $unreadNotifications > 0)
+                        <span class="sb-notification-count">{{ $unreadNotifications > 99 ? '99+' : $unreadNotifications }}</span>
                     @endif
                 </a>
             @endforeach

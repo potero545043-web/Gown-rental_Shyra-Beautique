@@ -201,7 +201,7 @@
 
                                                 <div class="sb-inventory-thumb">
                                                     @if($gown->image)
-                                                        <img src="{{ asset('storage/' . $gown->image) }}"
+                                                        <img src="{{ $gown->image_url }}"
                                                             alt="{{ $gown->name }}" loading="lazy">
                                                     @else
                                                         <span aria-hidden="true">✿</span>

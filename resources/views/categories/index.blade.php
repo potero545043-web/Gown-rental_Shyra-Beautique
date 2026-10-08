@@ -42,13 +42,11 @@
                             </p>
                         </div>
 
-                        <div class="sb-inventory-empty">
-
-                            <b>No accessories added</b>
-
-                            <p>Add included styling pieces and link them to gowns when editing a gown.</p>
-
-                        </div>
+                        <button class="sb-inventory-primary sb-inventory-filter-add" type="button"
+                            onclick="document.getElementById('category-create-dialog').showModal()">
+                            <span aria-hidden="true">＋</span>
+                            Add category
+                        </button>
 
                     </div>
 
@@ -80,12 +78,7 @@
                                             <div class="sb-inventory-name">
 
                                                 <div class="sb-inventory-thumb">
-                                                    @if($category->image)
-                                                        <img src="{{ asset('storage/' . $category->image) }}"
-                                                            alt="{{ $category->name }}" loading="lazy">
-                                                    @else
-                                                        <span aria-hidden="true">⌑</span>
-                                                    @endif
+                                                    <span aria-hidden="true">⌑</span>
                                                 </div>
 
                                                 <span>
@@ -195,8 +188,7 @@
                 </div>
 
 
-                <form method="POST" action="{{ route('owner.categories.store') }}" enctype="multipart/form-data"
-                    class="sb-side-drawer-form">
+                <form method="POST" action="{{ route('owner.categories.store') }}" class="sb-side-drawer-form">
 
                     @csrf
 
@@ -216,14 +208,6 @@
                         <textarea name="description" rows="4"
                             placeholder="What kinds of gowns belong in this collection?">{{ old('description') }}</textarea>
                         <x-input-error :messages="$errors->get('description')" />
-                    </label>
-
-                    <label>Category image
-                        <input type="file" name="image" accept="image/png,image/jpeg,image/webp"
-                            onchange="const f=this.files[0],p=document.getElementById('category-create-preview'); if(f){p.src=URL.createObjectURL(f); p.hidden=false;}">
-                        <img id="category-create-preview" class="sb-image-preview" alt="Image preview" hidden>
-                        <small class="sb-field-hint">JPG, PNG or WEBP, up to 2 MB.</small>
-                        <x-input-error :messages="$errors->get('image')" />
                     </label>
 
                     <div class="sb-side-drawer-actions">

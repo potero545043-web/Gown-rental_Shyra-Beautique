@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class CategoryController extends Controller
 {
@@ -34,15 +33,11 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
         Category::create([
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
-            'image' => $request->hasFile('image')
-                ? $request->file('image')->store('categories', 'public')
-                : null,
             'is_active' => true,
         ]);
 
@@ -75,7 +70,6 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
@@ -84,14 +78,6 @@ class CategoryController extends Controller
             'description' => $validated['description'] ?? null,
             'is_active' => $request->has('is_active'),
         ];
-
-        if ($request->hasFile('image')) {
-            if ($category->image) {
-                Storage::disk('public')->delete($category->image);
-            }
-
-            $data['image'] = $request->file('image')->store('categories', 'public');
-        }
 
         $category->update($data);
 

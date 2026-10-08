@@ -53,7 +53,8 @@
                     </label>
                     <button class="sb-payment-filter-button" type="submit">Filter</button>
                 </form>
-                <button class="sb-payment-add-button" type="button" data-open-record-payment>+ Record payment</button>
+                <button class="sb-payment-add-button" type="button" data-open-record-payment
+                    aria-label="Record cash received against an outstanding reservation balance">+ Record payment</button>
             </div>
 
             @if($reviewCount > 0)
@@ -208,7 +209,7 @@
                         </div><button type="button" data-close-record-payment aria-label="Close">×</button>
                     </div>
                     @if($openReservations->isEmpty())
-                        <p>No reservations currently have an outstanding balance.</p>
+                        <p>No reservations currently have an outstanding balance. Use this form to record cash already collected against an existing reservation; start a new reservation to record its first payment.</p>
                     @else
                         <label>Reservation<select name="reservation_picker" data-record-reservation required>
                                 @foreach($openReservations as $reservation)

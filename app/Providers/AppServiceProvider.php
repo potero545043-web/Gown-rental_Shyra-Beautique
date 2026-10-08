@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Reservation;
+use App\Observers\ReservationObserver;
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Support\ServiceProvider;
 
@@ -20,6 +22,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Reservation::observe(ReservationObserver::class);
+
         RedirectIfAuthenticated::redirectUsing(function (): string {
             $role = auth()->user()?->role;
 

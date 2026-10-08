@@ -42,9 +42,9 @@
                                 class="sb-status sb-status-{{ $reservation->status }}">{{ ucfirst(str_replace('_', ' ', $reservation->status)) }}</span>
                         </div>
 
-                        @if($gown?->image)
+                        @if($gown)
                             <a class="sb-customer-booking-thumb"
-                                style="background-image:url('{{ asset('storage/' . $gown->image) }}')"
+                                style="background-image:url('{{ $gown->image_url }}')"
                                 href="{{ route('customer.reservations.show', $reservation) }}"
                                 aria-label="{{ $gown->name }}"></a>
                         @endif

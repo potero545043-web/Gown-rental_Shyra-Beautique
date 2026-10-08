@@ -8,6 +8,7 @@ use App\Http\Controllers\AccessoryController;
 use App\Http\Controllers\Owner\DashboardController as OwnerDashboardController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Customer\DashboardController as CustomerDashboardController;
+use App\Http\Controllers\Customer\NotificationController as CustomerNotificationController;
 use App\Http\Controllers\ManagementController;
 use App\Http\Controllers\ProfileController;
 
@@ -136,6 +137,9 @@ Route::middleware(['auth', 'role:customer'])
         Route::get('/reservations/{reservation}', [CustomerDashboardController::class, 'showReservation'])->name('reservations.show');
         Route::patch('/reservations/{reservation}/cancel', [CustomerDashboardController::class, 'cancelReservation'])->name('reservations.cancel');
         Route::post('/reservations/{reservation}/payments', [CustomerDashboardController::class, 'submitPayment'])->name('reservations.payments.store');
+        Route::get('/notifications', [CustomerNotificationController::class, 'index'])->name('notifications');
+        Route::post('/notifications/read-all', [CustomerNotificationController::class, 'markAllRead'])->name('notifications.read-all');
+        Route::post('/notifications/{notification}/read', [CustomerNotificationController::class, 'markRead'])->name('notifications.read');
 
     });
 

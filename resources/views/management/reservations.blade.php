@@ -133,6 +133,16 @@
                                                         <input name="admin_notes" placeholder="Optional note"
                                                             value="{{ $reservation->admin_notes }}">
                                                     </label>
+                                                    <div class="sb-form-row">
+                                                        <label>Pickup date
+                                                            <input type="date" name="pickup_date"
+                                                                value="{{ $reservation->pickup_date?->format('Y-m-d') }}" required>
+                                                        </label>
+                                                        <label>Return date
+                                                            <input type="date" name="return_date"
+                                                                value="{{ $reservation->return_date?->format('Y-m-d') }}" required>
+                                                        </label>
+                                                    </div>
                                                     <button class="sb-small-btn">Update booking</button>
                                                 </form>
                                                 @if($reservation->balance > 0 && !in_array($reservation->status, ['cancelled', 'rejected', 'completed'], true))

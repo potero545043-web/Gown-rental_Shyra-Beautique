@@ -335,7 +335,49 @@ class ManagementController extends Controller
         $data = $request->validate([
             'status' => ['required', Rule::in(array_merge([$reservation->status], $allowedTransitions))],
             'admin_notes' => ['nullable', 'string', 'max:1000'],
+            'pickup_date' => ['sometimes', 'required', 'date'],
+            'return_date' => ['sometimes', 'required', 'date', 'after_or_equal:pickup_date'],
         ]);
+        if (isset($data['pickup_date'], $data['return_date'])) {
+            $pickupDate = Carbon::parse($data['pickup_date'])->startOfDay();
+            $returnDate = Carbon::parse($data['return_date'])->startOfDay();
+
+            if ($returnDate->gt($pickupDate->copy()->addDays(2))) {
+                throw ValidationException::withMessages([
+                    'return_date' => 'A gown may be rented for up to 3 days from its pickup date.',
+                ]);
+            }
+
+            $datesChanged = $pickupDate->toDateString() !== $reservation->pickup_date->toDateString()
+                || $returnDate->toDateString() !== $reservation->return_date->toDateString();
+
+            if ($datesChanged && $pickupDate->lt(today()->startOfDay())) {
+                throw ValidationException::withMessages([
+                    'pickup_date' => 'Updated reservation dates must be today or later.',
+                ]);
+            }
+
+            if ($datesChanged) {
+                $gownIds = $reservation->items()->pluck('gown_id');
+                $conflict = Reservation::with('gownReturn')
+                    ->where('id', '!=', $reservation->id)
+                    ->whereNotIn('status', ['cancelled', 'rejected'])
+                    ->whereHas('items', fn($items) => $items->whereIn('gown_id', $gownIds))
+                    ->get()
+                    ->contains(function (Reservation $existing) use ($pickupDate, $returnDate) {
+                        $occupiedThrough = $existing->gownReturn?->actual_return_date ?? $existing->return_date;
+
+                        return Carbon::parse($existing->pickup_date)->startOfDay()->lte($returnDate)
+                            && Carbon::parse($occupiedThrough)->startOfDay()->gte($pickupDate);
+                    });
+
+                if ($conflict) {
+                    throw ValidationException::withMessages([
+                        'pickup_date' => 'One or more gowns in this reservation are already booked for those dates.',
+                    ]);
+                }
+            }
+        }
         if ($data['status'] === 'completed') {
             abort_unless($reservation->status === 'returned', 422, 'Only returned rentals can be completed.');
             abort_if((float) $reservation->balance > 0, 422, 'Clear the outstanding balance before completing this rental.');

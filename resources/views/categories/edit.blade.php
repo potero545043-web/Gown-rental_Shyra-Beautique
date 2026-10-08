@@ -23,8 +23,7 @@
 
             <section class="sb-panel sb-inventory-form-card">
 
-                <form method="POST" action="{{ route('owner.categories.update', $category) }}"
-                    enctype="multipart/form-data">
+                <form method="POST" action="{{ route('owner.categories.update', $category) }}">
 
                     @csrf
                     @method('PUT')
@@ -38,18 +37,6 @@
                     <label>Description
                         <textarea name="description"
                             rows="4">{{ old('description', $category->description) }}</textarea>
-                    </label>
-
-                    <label>Category image
-                        <img id="category-preview" class="sb-image-preview" alt="{{ $category->name }}"
-                            @if($category->image) src="{{ asset('storage/' . $category->image) }}" @else hidden @endif>
-
-                        <input type="file" name="image" accept="image/png,image/jpeg,image/webp"
-                            onchange="const f=this.files[0],p=document.getElementById('category-preview'); if(f){p.src=URL.createObjectURL(f); p.hidden=false;}">
-
-                        <small class="sb-field-hint">
-                            {{ $category->image ? 'Choose a file only if you want to replace the current image.' : 'JPG, PNG or WEBP, up to 2 MB.' }}
-                        </small>
                     </label>
 
                     <label class="sb-inventory-check">

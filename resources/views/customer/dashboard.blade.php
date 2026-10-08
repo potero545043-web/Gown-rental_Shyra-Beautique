@@ -81,14 +81,10 @@
             <div class="sb-cards">
                 @forelse($featured as $gown)
                     <article class="sb-product">
-                        <a class="sb-product-image {{ $gown->image ? '' : 'is-empty' }}"
+                        <a class="sb-product-image"
                             href="{{ route('customer.gowns.show', $gown) }}" aria-label="View {{ $gown->name }}">
-                            @if($gown->image)
-                                <img src="{{ asset('storage/' . $gown->image) }}" alt="{{ $gown->name }}" loading="lazy"
-                                    decoding="async">
-                            @else
-                                <span class="sb-product-image-empty">Photo coming soon</span>
-                            @endif
+                            <img src="{{ $gown->image_url }}" alt="{{ $gown->name }}" loading="lazy"
+                                decoding="async">
                             <span
                                 class="sb-available {{ $gown->status === 'available' ? '' : 'is-unavailable' }}">{{ ucfirst(str_replace('_', ' ', $gown->status)) }}</span>
                         </a>

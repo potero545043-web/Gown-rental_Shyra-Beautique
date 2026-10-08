@@ -180,7 +180,7 @@
 
                                 <div class="sb-rank-thumb">
                                     @if($gown->image)
-                                        <img src="{{ asset('storage/' . $gown->image) }}" alt="{{ $gown->name }}"
+                                        <img src="{{ $gown->image_url }}" alt="{{ $gown->name }}"
                                             loading="lazy">
                                     @else
                                         <span aria-hidden="true">✿</span>

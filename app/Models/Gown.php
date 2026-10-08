@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Gown extends Model
 {
@@ -36,6 +37,15 @@ class Gown extends Model
         'date_purchased' => 'date',
         'archived_at' => 'datetime',
     ];
+
+    public function getImageUrlAttribute(): string
+    {
+        if ($this->image && Storage::disk('public')->exists($this->image)) {
+            return Storage::disk('public')->url($this->image);
+        }
+
+        return asset('images/image.webp');
+    }
 
     public function category()
     {

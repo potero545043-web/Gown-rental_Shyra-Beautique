@@ -42,11 +42,11 @@
 
                     <label>Accessory image
                         <img id="accessory-preview" class="sb-image-preview" alt="{{ $accessory->name }}"
-                            @if($accessory->image) src="{{ asset('storage/' . $accessory->image) }}" @else hidden
+                            @if($accessory->image) src="{{ asset('storage/' . $accessory->image) }}" style="display:block" @else hidden style="display:none"
                             @endif>
 
                         <input type="file" name="image" accept="image/png,image/jpeg,image/webp"
-                            onchange="const f=this.files[0],p=document.getElementById('accessory-preview'); if(f){p.src=URL.createObjectURL(f); p.hidden=false;}">
+                            onchange="const f=this.files[0],p=document.getElementById('accessory-preview'); if(f){p.src=URL.createObjectURL(f); p.hidden=false; p.style.display='block';}">
 
                         <small class="sb-field-hint">
                             {{ $accessory->image ? 'Choose a file only if you want to replace the current image.' : 'JPG, PNG or WEBP, up to 2 MB.' }}

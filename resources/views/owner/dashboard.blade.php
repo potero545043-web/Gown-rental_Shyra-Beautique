@@ -216,10 +216,10 @@
 
                             </div>
 
-                            <span
-                                class="inline-flex w-fit px-3 py-1.5 rounded-full bg-[#F8EEF2] text-[#5C1A2B] text-[10px] font-semibold uppercase tracking-wide">
-                                Latest Bookings
-                            </span>
+                            <a href="{{ route('owner.payments') }}"
+                                class="inline-flex w-fit px-3 py-1.5 rounded-full bg-[#F8EEF2] text-[#5C1A2B] text-[10px] font-semibold uppercase tracking-wide hover:bg-[#F0E4E8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5C1A2B]">
+                                View payments →
+                            </a>
 
                         </div>
 
@@ -272,42 +272,53 @@
 
                                         <td class="px-6 py-4">
 
-                                            <span class="font-semibold text-[#5C1A2B]">
+                                            <a href="{{ route('owner.payments', ['q' => $reservation->reservation_code]) }}"
+                                                class="font-semibold text-[#5C1A2B] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5C1A2B]"
+                                                aria-label="View payments for reservation {{ $reservation->reservation_code }}">
                                                 {{ $reservation->reservation_code }}
-                                            </span>
+                                            </a>
 
                                         </td>
 
 
                                         <td class="px-6 py-4 text-[#5F555A]">
 
-                                            {{ $reservation->customer->full_name ?? 'Customer' }}
+                                            <a href="{{ route('owner.payments', ['q' => $reservation->reservation_code]) }}"
+                                                class="hover:underline">
+                                                {{ $reservation->customer->full_name ?? 'Customer' }}
+                                            </a>
 
                                         </td>
 
 
                                         <td class="px-6 py-4 text-[#6F6662] whitespace-nowrap">
 
-                                            {{ $reservation->pickup_date?->format('M d, Y') }}
+                                            <a href="{{ route('owner.payments', ['q' => $reservation->reservation_code]) }}"
+                                                class="hover:underline">
+                                                {{ $reservation->pickup_date?->format('M d, Y') }}
+                                            </a>
 
                                         </td>
 
 
                                         <td class="px-6 py-4">
 
-                                            <span
+                                            <a href="{{ route('owner.payments', ['q' => $reservation->reservation_code]) }}"
                                                 class="inline-flex px-2.5 py-1 rounded-full bg-[#F8EEF2] text-[#5C1A2B] text-xs font-medium capitalize sb-dash-status sb-dash-status-{{ $reservation->status }}">
 
                                                 {{ str_replace('_', ' ', $reservation->status) }}
 
-                                            </span>
+                                            </a>
 
                                         </td>
 
 
                                         <td class="px-6 py-4 text-right font-semibold text-[#5C1A2B] whitespace-nowrap">
 
-                                            ₱{{ number_format($reservation->grand_total, 0) }}
+                                            <a href="{{ route('owner.payments', ['q' => $reservation->reservation_code]) }}"
+                                                class="hover:underline">
+                                                ₱{{ number_format($reservation->grand_total, 0) }}
+                                            </a>
 
                                         </td>
 
@@ -396,7 +407,7 @@
                                     class="w-12 h-12 shrink-0 rounded-xl overflow-hidden bg-[#F8EEF2] flex items-center justify-center text-[#B76E79] text-xl transition group-hover:scale-105">
 
                                     @if($gown->image)
-                                        <img src="{{ asset('storage/' . $gown->image) }}" alt="{{ $gown->name }}"
+                                        <img src="{{ $gown->image_url }}" alt="{{ $gown->name }}"
                                             class="w-full h-full object-cover" loading="lazy">
                                     @else
                                         <span>✿</span>

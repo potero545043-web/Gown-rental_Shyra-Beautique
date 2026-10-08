@@ -93,14 +93,10 @@
 
                         <span class="sb-product-badge is-{{ $gown->status }}">{{ ucfirst($gown->status) }}</span>
 
-                        <a class="sb-product-image {{ $gown->image ? '' : 'is-empty' }}"
+                        <a class="sb-product-image"
                             href="{{ route($showRoute, $gown) }}" aria-label="View {{ $gown->name }}">
-                            @if($gown->image)
-                                <img src="{{ asset('storage/' . $gown->image) }}" alt="{{ $gown->name }}" loading="lazy"
-                                    decoding="async">
-                            @else
-                                <span class="sb-product-image-empty">Photo coming soon</span>
-                            @endif
+                            <img src="{{ $gown->image_url }}" alt="{{ $gown->name }}" loading="lazy"
+                                decoding="async">
                         </a>
 
                         <div class="sb-product-info">
