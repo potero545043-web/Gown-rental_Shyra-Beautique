@@ -12,7 +12,8 @@
 
             </div>
 
-            <form method="GET" class="sb-filterbar">
+            <form method="GET" class="sb-filterbar" data-live-filter>
+                <input type="hidden" name="per_page" value="{{ $customers->perPage() }}">
                 <input name="q" value="{{ request('q') }}" placeholder="Search customer name, email, or phone">
                 <button class="sb-btn">Search</button>
 
@@ -69,9 +70,7 @@
                 </div>
             </section>
 
-            <div class="sb-pagination">{{ $customers->links() }}
-
-            </div>
+            @include('components.table-pagination', ['paginator' => $customers, 'itemLabel' => 'customers'])
         </div>
     </div>
 </x-app-layout>

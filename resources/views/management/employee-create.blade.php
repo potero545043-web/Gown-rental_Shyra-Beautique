@@ -7,7 +7,10 @@
             <h2>Employee details</h2>
             <label>Full name<input name="name" required value="{{ old('name') }}"></label>
             <label>Email address<input type="email" name="email" required value="{{ old('email') }}"></label>
-            <label>Temporary password<input type="password" name="password" minlength="8" required></label>
+            {{-- Password stays masked and is never echoed back; it is stored only as a hash. --}}
+            <label>Temporary password<input type="password" name="password" minlength="8" required
+                    autocomplete="new-password" autocapitalize="off" spellcheck="false" value=""
+                    data-lpignore="true"></label>
             <label>Contact number<input name="contact_number" value="{{ old('contact_number') }}"></label>
             <label>Position<input name="position" value="{{ old('position', 'Rental Staff') }}" required></label>
             <button class="sb-btn" type="submit">Create employee account</button>

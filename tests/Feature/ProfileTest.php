@@ -55,9 +55,9 @@ test('user can delete their account', function () {
 
     $response = $this
         ->actingAs($user)
-        ->delete('/profile', [
+        ->delete('/profile', encryptPasswordFields([
             'password' => 'password',
-        ]);
+        ]));
 
     $response
         ->assertSessionHasNoErrors()
@@ -73,9 +73,9 @@ test('correct password must be provided to delete account', function () {
     $response = $this
         ->actingAs($user)
         ->from('/profile')
-        ->delete('/profile', [
+        ->delete('/profile', encryptPasswordFields([
             'password' => 'wrong-password',
-        ]);
+        ]));
 
     $response
         ->assertSessionHasErrorsIn('userDeletion', 'password')

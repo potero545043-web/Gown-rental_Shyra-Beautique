@@ -2,6 +2,7 @@
 
 use App\Models\Accessory;
 use App\Models\Category;
+use App\Models\Gown;
 use App\Models\User;
 use App\Services\VercelBlobStorage;
 use Illuminate\Http\Client\Request as ClientRequest;
@@ -19,6 +20,7 @@ it('lets the owner open the category form without a category image field', funct
         ->assertOk()
         ->assertSee('Add category')
         ->assertSee("document.getElementById('category-create-dialog').showModal()", false)
+        ->assertDontSee('sb-inventory-thumb', false)
         ->assertDontSee('Category image');
 });
 
@@ -65,7 +67,7 @@ it('shows the uploaded accessory image in inventory and item details', function 
         ->get(route('owner.accessories.create'))
         ->assertOk()
         ->assertSee('id="accessory-preview"', false)
-        ->assertSee("p.style.display='block'", false);
+        ->assertSee('type="file" name="image"', false);
 
     $this->actingAs($this->owner)
         ->post(route('owner.accessories.store'), [
@@ -86,7 +88,7 @@ it('shows the uploaded accessory image in inventory and item details', function 
         ->get(route('owner.accessories.index'))
         ->assertOk()
         ->assertSee('id="accessory-create-preview"', false)
-        ->assertSee("p.style.display='block'", false)
+        ->assertSee('type="file" name="image"', false)
         ->assertSee($imageUrl, false)
         ->assertSee('alt="Crystal tiara"', false);
 
@@ -94,6 +96,61 @@ it('shows the uploaded accessory image in inventory and item details', function 
         ->assertOk()
         ->assertSee($imageUrl, false)
         ->assertSee('alt="Crystal tiara"', false);
+});
+
+it('paginates categories and accessories with a bounded page size', function () {
+    foreach (range(1, 13) as $number) {
+        Category::create(['name' => "Category {$number}"]);
+        Accessory::create([
+            'name' => "Accessory {$number}",
+            'quantity' => 1,
+            'replacement_cost' => 100,
+            'status' => 'available',
+        ]);
+    }
+
+    $this->actingAs($this->owner)
+        ->get(route('owner.categories.index', ['per_page' => 12]))
+        ->assertOk()
+        ->assertSee('Showing 1–12')
+        ->assertSee('of 13 categories')
+        ->assertViewHas('categories', fn ($categories) => $categories->count() === 12
+            && $categories->total() === 13
+            && $categories->perPage() === 12);
+
+    $this->get(route('owner.accessories.index', ['per_page' => 48]))
+        ->assertOk()
+    ->assertSee('Showing 1–13')
+    ->assertSee('of 13 accessories')
+        ->assertViewHas('accessories', fn ($accessories) => $accessories->count() === 13
+            && $accessories->total() === 13
+            && $accessories->perPage() === 48);
+
+    $this->get(route('owner.accessories.index', ['per_page' => 200]))
+        ->assertOk()
+        ->assertViewHas('accessories', fn ($accessories) => $accessories->perPage() === 12);
+});
+
+it('paginates the gown collection shown on a category detail page', function () {
+    $category = Category::create(['name' => 'Category collection']);
+    foreach (range(1, 13) as $number) {
+        Gown::create([
+            'category_id' => $category->id,
+            'gown_code' => sprintf('GWN-CATEGORY-%03d', $number),
+            'name' => "Category gown {$number}",
+            'rental_price' => 1500,
+            'security_deposit' => 0,
+            'status' => 'available',
+        ]);
+    }
+
+    $this->actingAs($this->owner)
+        ->get(route('owner.categories.show', ['category' => $category, 'per_page' => 12]))
+        ->assertOk()
+        ->assertSee('of 13 gowns')
+        ->assertViewHas('gowns', fn($gowns) => $gowns->total() === 13
+            && $gowns->count() === 12
+            && $gowns->perPage() === 12);
 });
 
 it('stores Vercel inventory images in the public Blob store', function () {

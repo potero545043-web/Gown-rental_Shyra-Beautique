@@ -21,7 +21,8 @@
                 <div class="sb-success">{{ session('success') }}</div>
             @endif
 
-            <form class="sb-filterbar" method="GET">
+            <form class="sb-filterbar" method="GET" data-live-filter>
+                <input type="hidden" name="per_page" value="{{ $reservations->perPage() }}">
                 <input name="q" value="{{ request('q') }}" placeholder="Search guest or reservation">
                 <select name="status">
                     <option value="">All statuses</option>
@@ -59,7 +60,10 @@
                         </thead>
                         <tbody>
                             @forelse($reservations as $reservation)
-                                <tr>
+                                <tr class="sb-clickable-row"
+                                    data-href="{{ route($base . '.reservations.show', $reservation) }}"
+                                    tabindex="0" role="link"
+                                    aria-label="View reservation {{ $reservation->reservation_code }}">
                                     <td data-label="Reservation">
                                         <strong>{{ $reservation->reservation_code }}</strong>
                                         <small class="sb-cell-sub">{{ $reservation->created_at?->format('M d, Y') }}</small>
@@ -193,7 +197,7 @@
                 </div>
             </section>
 
-            <div class="sb-pagination">{{ $reservations->links() }}</div>
+            @include('components.table-pagination', ['paginator' => $reservations, 'itemLabel' => 'reservations'])
         </div>
     </div>
 

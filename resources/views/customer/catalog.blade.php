@@ -69,8 +69,11 @@
 
                 <select id="availabilityFilter">
                     <option value="">Any availability</option>
-                    <option value="available">Available</option>
-                    <option value="reserved">Reserved</option>
+                    @foreach($gowns->pluck('status')->filter()->unique()->sort() as $status)
+                        <option value="{{ $status }}" @selected(request('availability') === $status)>
+                            {{ ucfirst(str_replace('_', ' ', $status)) }}
+                        </option>
+                    @endforeach
                 </select>
             </div>
 
@@ -86,7 +89,7 @@
             <div class="sb-cards" id="gownCatalog">
                 @forelse($gowns as $gown)
                     <article class="sb-product"
-                        data-search="{{ strtolower($gown->name . ' ' . $gown->gown_code . ' ' . ($gown->category->name ?? '') . ' ' . ($gown->style ?? '')) }}"
+                        data-search="{{ strtolower($gown->name . ' ' . $gown->gown_code . ' ' . ($gown->category->name ?? '') . ' ' . ($gown->style ?? '') . ' ' . ($gown->size ?? '') . ' ' . ($gown->color ?? '')) }}"
                         data-category="{{ strtolower($gown->category->name ?? '') }}"
                         data-size="{{ strtolower($gown->size ?? '') }}" data-style="{{ strtolower($gown->style ?? '') }}"
                         data-color="{{ strtolower($gown->color ?? '') }}" data-status="{{ $gown->status }}">
@@ -105,13 +108,44 @@
                                 <b>₱{{ number_format($gown->rental_price, 0) }}</b>
 
                                 @if($gown->status === 'available' && $role === 'customer')
-                                    <a class="sb-product-reserve" href="{{ route('customer.reserve', $gown) }}">
-                                        Start reservation <span aria-hidden="true">→</span>
-                                    </a>
-                                @elseif($gown->status === 'available' && in_array($role, ['owner', 'employee'], true))
-                                    <a class="sb-product-reserve" href="{{ route($role . '.catalog.reserve', $gown) }}">
-                                        Start reservation <span aria-hidden="true">→</span>
-                                    </a>
+                                    <div class="sb-card-actions">
+                                        <a class="sb-card-reserve-btn" href="{{ route('customer.reserve.gown', $gown) }}">
+                                            Reserve Now
+                                        </a>
+                                        <form method="POST" action="{{ route('customer.cart.add', $gown) }}" class="sb-card-cart-form">
+                                            @csrf
+                                            <button type="submit" class="sb-card-cart-btn"
+                                                title="Add to cart" aria-label="Add {{ $gown->name }} to cart">
+                                                <svg><use href="#sb-i-cart" /></svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                @elseif($gown->status === 'available' && $role === 'employee')
+                                    <div class="sb-card-actions">
+                                        <a class="sb-card-reserve-btn" href="{{ route('employee.catalog.reserve', $gown) }}">
+                                            Reserve Now
+                                        </a>
+                                        <form method="POST" action="{{ route('employee.cart.add', $gown) }}" class="sb-card-cart-form">
+                                            @csrf
+                                            <button type="submit" class="sb-card-cart-btn"
+                                                title="Add to cart" aria-label="Add {{ $gown->name }} to cart">
+                                                <svg><use href="#sb-i-cart" /></svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                @elseif($gown->status === 'available' && $role === 'owner')
+                                    <div class="sb-card-actions">
+                                        <a class="sb-card-reserve-btn" href="{{ route('owner.catalog.reserve', $gown) }}">
+                                            Reserve Now
+                                        </a>
+                                        <form method="POST" action="{{ route('owner.cart.add', $gown) }}" class="sb-card-cart-form">
+                                            @csrf
+                                            <button type="submit" class="sb-card-cart-btn"
+                                                title="Add to cart" aria-label="Add {{ $gown->name }} to cart">
+                                                <svg><use href="#sb-i-cart" /></svg>
+                                            </button>
+                                        </form>
+                                    </div>
                                 @endif
                             </div>
                         </div>
@@ -127,6 +161,7 @@
                             <p>The collection is being prepared. Please check back soon.</p>
                         @endif
                     </div>
+
                 @endforelse
 
                 {{-- shown by JS when filters match nothing --}}
@@ -138,6 +173,19 @@
                     </div>
                 @endif
             </div>
+
+            @if($total > 0)
+                <nav class="sb-catalog-pagination" id="catalogPagination" aria-label="Gown catalog pagination">
+                    <span id="catalogPageCount" aria-live="polite"></span>
+                    <label for="catalogPageSize">Gowns per page</label>
+                    <select id="catalogPageSize">
+                        @foreach([12, 24, 48] as $size)
+                            <option value="{{ $size }}">{{ $size }}</option>
+                        @endforeach
+                    </select>
+                    <div class="sb-catalog-page-buttons" id="catalogPageButtons"></div>
+                </nav>
+            @endif
         </div>
     </div>
 
@@ -168,6 +216,77 @@
             margin: 14px 2px 18px;
             font-size: 13px;
             color: #7a6642;
+        }
+
+        .sb-catalog-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-top: 22px;
+            padding: 16px;
+            border: 1px solid #ecd9c8;
+            border-radius: 14px;
+            background: #fffdf8;
+            color: #7a6642;
+            font-size: 13px;
+        }
+
+        .sb-catalog-pagination > label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sb-catalog-pagination select {
+            width: auto;
+            min-width: 72px;
+            min-height: 36px;
+            padding: 6px 28px 6px 10px;
+            border: 1px solid #e3d6b8;
+            border-radius: 8px;
+            background: #fff;
+            color: #3a2c1a;
+        }
+
+        .sb-catalog-page-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .sb-catalog-page-buttons button {
+            min-width: 36px;
+            min-height: 36px;
+            padding: 0 10px;
+            border: 1px solid #e6d9ca;
+            border-radius: 8px;
+            background: #fffdf9;
+            color: #6b5551;
+            cursor: pointer;
+        }
+
+        .sb-catalog-page-buttons button.is-active {
+            border-color: #6d1935;
+            background: #6d1935;
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .sb-catalog-page-buttons button:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 640px) {
+            .sb-catalog-pagination {
+                align-items: flex-start;
+            }
+
+            .sb-catalog-page-buttons {
+                width: 100%;
+            }
         }
 
         .sb-catalog-clear {
@@ -260,38 +379,100 @@
             };
             const cards = [...document.querySelectorAll('#gownCatalog .sb-product')];
             const count = document.querySelector('#resultCount');
+            const pageCount = document.querySelector('#catalogPageCount');
+            const pageSizeSelect = document.querySelector('#catalogPageSize');
+            const pageButtons = document.querySelector('#catalogPageButtons');
             const clear = document.querySelector('#clearFilters');
             const noMatch = document.querySelector('#noMatch');
+            let currentPage = 1;
+            let matches = [];
 
-            const apply = () => {
-                const q = (f.search.value || '').toLowerCase();
-                let shown = 0;
+            const renderPageButtons = pageTotal => {
+                if (!pageButtons) return;
+
+                pageButtons.replaceChildren();
+                const addButton = (label, page, disabled = false, active = false) => {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.textContent = label;
+                    button.disabled = disabled;
+                    button.classList.toggle('is-active', active);
+                    button.setAttribute('aria-label', label === 'Previous'
+                        ? 'Previous page'
+                        : label === 'Next' ? 'Next page' : `Page ${page}`);
+                    if (active) button.setAttribute('aria-current', 'page');
+                    if (!disabled && !active) {
+                        button.addEventListener('click', () => {
+                            currentPage = page;
+                            renderPage();
+                        });
+                    }
+                    pageButtons.append(button);
+                };
+
+                addButton('Previous', Math.max(1, currentPage - 1), currentPage === 1);
+                const start = Math.max(1, Math.min(currentPage - 2, pageTotal - 4));
+                const end = Math.min(pageTotal, start + 4);
+                for (let page = start; page <= end; page++) {
+                    addButton(String(page), page, false, page === currentPage);
+                }
+                addButton('Next', Math.min(pageTotal, currentPage + 1), currentPage === pageTotal);
+            };
+
+            const renderPage = () => {
+                const pageSize = Number(pageSizeSelect?.value) || 12;
+                const pageTotal = Math.max(1, Math.ceil(matches.length / pageSize));
+                currentPage = Math.min(currentPage, pageTotal);
+                const first = matches.length ? (currentPage - 1) * pageSize : 0;
+                const visible = new Set(matches.slice(first, first + pageSize));
 
                 cards.forEach(card => {
+                    card.hidden = !visible.has(card);
+                });
+
+                if (pageCount) {
+                    pageCount.textContent = matches.length
+                        ? `Showing ${first + 1}–${Math.min(first + pageSize, matches.length)} of ${matches.length} gowns`
+                        : 'No gowns match these filters';
+                }
+                renderPageButtons(pageTotal);
+            };
+
+            const apply = () => {
+                const q = f.search.value.trim().toLowerCase();
+
+                matches = cards.filter(card => {
                     const d = card.dataset;
-                    const ok = d.search.includes(q)
+                    return d.search.includes(q)
                         && (!f.category.value || d.category === f.category.value)
                         && (!f.size.value || d.size === f.size.value)
                         && (!f.style.value || d.style === f.style.value)
                         && (!f.color.value || d.color === f.color.value)
                         && (!f.status.value || d.status === f.status.value);
-                    card.hidden = !ok;
-                    if (ok) shown++;
                 });
 
                 // highlight the filters that are in use
                 Object.values(f).forEach(el => el.classList.toggle('is-filtered', !!el.value));
 
                 const filtering = Object.values(f).some(el => !!el.value);
-                if (count) count.textContent = `Showing ${shown} of ${cards.length} gowns`;
+                if (count) count.textContent = `${matches.length} ${matches.length === 1 ? 'gown' : 'gowns'} match`;
                 if (clear) clear.hidden = !filtering;
-                if (noMatch) noMatch.hidden = shown !== 0;
+                if (noMatch) noMatch.hidden = matches.length !== 0;
+                currentPage = 1;
+                renderPage();
             };
 
-            Object.values(f).forEach(el => {
-                el.addEventListener('input', apply);
-                el.addEventListener('change', apply);
-            });
+            f.search.addEventListener('input', apply);
+            Object.values(f)
+                .filter(el => el !== f.search)
+                .forEach(el => el.addEventListener('change', apply));
+
+            if (pageSizeSelect) {
+                pageSizeSelect.addEventListener('change', () => {
+                    currentPage = 1;
+                    renderPage();
+                });
+            }
 
             if (clear) {
                 clear.addEventListener('click', () => {

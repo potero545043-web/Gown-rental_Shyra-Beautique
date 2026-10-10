@@ -101,6 +101,7 @@
         // Any form can opt in with data-confirm-message="..." (plus optional title / accent / yes / no).
         const configFor = form => {
             if (!form) return null;
+            if (form.dataset.confirmed === 'true') return null;
             if (form.dataset.confirmMessage) {
                 return {
                     title: form.dataset.confirmTitle || 'Are you',
@@ -152,7 +153,12 @@
         confirmBtn.addEventListener('click', () => {
             const form = pendingForm;
             overlay.hidden = true;
-            if (form) HTMLFormElement.prototype.submit.call(form);
+            pendingForm = null;
+            if (form) {
+                form.dataset.confirmed = 'true';
+                window.__sbMarkInternalNavigation?.();
+                form.requestSubmit();
+            }
         });
         cancelBtn.addEventListener('click', close);
         overlay.addEventListener('click', e => { if (e.target === overlay) close(); });

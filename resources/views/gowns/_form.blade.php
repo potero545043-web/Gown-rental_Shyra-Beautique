@@ -9,28 +9,5 @@
                 @include('gowns._fields')
             </form>
         </section>
-        @if($isEditing)
-            <div class="sb-gown-archive-actions">
-                @if($gown->archived_at)
-                    <p>This gown is archived and hidden from active inventory and customer browsing.</p>
-                    <form method="POST" action="{{ route('owner.gowns.restore', $gown) }}">
-                        @csrf
-                        @method('PATCH')
-                        <button class="sb-inventory-primary" type="submit">Restore gown</button>
-                    </form>
-                @elseif(!in_array($gown->status, ['reserved', 'rented'], true))
-                    <p>Archiving hides this gown from active inventory. You can restore it anytime from View archive.</p>
-                    <form method="POST" action="{{ route('owner.gowns.archive', $gown) }}"
-                        data-confirm-title="Archive" data-confirm-accent="this gown?"
-                        data-confirm-message="This gown will move to your archive. You can restore it at any time."
-                        data-confirm-yes="Archive gown" data-confirm-no="Keep gown">
-                        @csrf
-                        <button class="sb-inventory-secondary" type="submit">Archive gown</button>
-                    </form>
-                @else
-                    <p>A reserved or rented gown cannot be archived.</p>
-                @endif
-            </div>
-        @endif
     </div></div>
 </x-app-layout>

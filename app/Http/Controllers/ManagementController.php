@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\{AuditLog, CleaningRecord, Customer, DamageReport, Employee, Gown, GownRelease, GownReturn, MaintenanceRecord, Payment, Penalty, Reservation, SystemSetting, User};
+use App\Models\GownPurchase;
+use App\Services\ReservationCart;
 use App\Services\VercelBlobStorage;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -15,27 +18,103 @@ use Illuminate\Validation\ValidationException;
 
 class ManagementController extends Controller
 {
-    public function rentals()
+    private function reservationCart(): ReservationCart
+    {
+        return ReservationCart::forRole(request()->user()->role);
+    }
+
+    private function pageSize(Request $request, string $parameter = 'per_page'): int
+    {
+        $size = $request->integer($parameter, 12);
+
+        return in_array($size, [12, 24, 48], true) ? $size : 12;
+    }
+
+    /** Adds a gown to the current booking cart and returns to the collection. */
+    public function addToCart(Gown $gown)
+    {
+        abort_unless($gown->status === 'available', 422, $gown->name . ' is not currently available for a new reservation.');
+        abort_if($gown->archived_at !== null, 422, 'This gown is no longer in the collection.');
+
+        $this->reservationCart()->add($gown->id);
+
+        return back()->with('success', $gown->name . ' was added to the in-store cart. Add more gowns, then open My Cart to reserve them together.');
+    }
+
+    /** Shows the in-store cart so several gowns can be reserved together. */
+    public function cart()
+    {
+        return view('management.cart', [
+            'gowns' => $this->reservationCart()->gowns(),
+            'rentalTotal' => $this->reservationCart()->total(),
+            'lateFeePerDay' => (float) SystemSetting::where('setting_key', 'late_fee_per_day')->value('setting_value'),
+        ]);
+    }
+
+    /** Removes a gown from the current booking cart. */
+    public function removeFromCart(Gown $gown)
+    {
+        $this->reservationCart()->remove($gown->id);
+
+        return redirect()->route(request()->user()->role . '.cart')
+            ->with('success', $gown->name . ' was removed from the in-store cart.');
+    }
+
+    public function clearCart()
+    {
+        $this->reservationCart()->clear();
+
+        return redirect()->route(request()->user()->role . '.catalog')->with('success', 'The in-store cart was cleared.');
+    }
+
+    /**
+     * Starts the walk-in booking form. With no gown in the URL it is seeded from
+     * the staff cart so several gowns flow straight into one reservation.
+     */
+    public function employeeReservationForm(?Gown $gown = null)
+    {
+        $cartGowns = $this->reservationCart()->gowns();
+
+        if ($gown) {
+            abort_unless($gown->status === 'available', 422, 'Only gowns currently marked available can start a new reservation.');
+            $cartGowns = $cartGowns->prepend($gown)->unique('id')->values();
+        }
+
+        abort_if($cartGowns->isEmpty(), 422, 'Add at least one gown to the in-store cart before starting a reservation.');
+
+        return view('management.reservation-create', [
+            'customers' => Customer::where('status', 'active')->orderBy('full_name')->get(),
+            'gown' => $cartGowns->first(),
+            'cartGowns' => $cartGowns,
+            // Other available gowns so staff can add several pieces to one walk-in booking.
+            'addableGowns' => Gown::with('category')
+                ->whereNull('archived_at')
+                ->where('status', 'available')
+                ->whereNotIn('id', $cartGowns->pluck('id'))
+                ->orderBy('name')
+                ->get(),
+            'lateFeePerDay' => (float) SystemSetting::where('setting_key', 'late_fee_per_day')->value('setting_value'),
+        ]);
+    }
+
+    public function rentals(Request $request)
     {
         return view('management.rentals', [
             'rentals' => Reservation::with(['customer', 'items.gown', 'gownRelease', 'gownReturn'])
-                ->whereIn('status', ['confirmed', 'ready_for_pickup', 'released', 'overdue', 'returned', 'completed'])->orderBy('pickup_date')->get(),
-            'cleanings' => CleaningRecord::with('gown')->where('status', 'pending')->latest()->get(),
+                ->whereIn('status', ['confirmed', 'ready_for_pickup', 'released', 'overdue', 'returned', 'completed'])
+                ->orderBy('pickup_date')
+                ->paginate($this->pageSize($request, 'rentals_per_page'), ['*'], 'rentals_page')
+                ->withQueryString(),
+            'cleanings' => CleaningRecord::with('gown')
+                ->where('status', 'pending')
+                ->latest()
+                ->paginate($this->pageSize($request, 'cleanings_per_page'), ['*'], 'cleanings_page')
+                ->withQueryString(),
             'pickupsToday' => Reservation::whereIn('status', ['confirmed', 'ready_for_pickup'])->whereDate('pickup_date', today())->count(),
             'activeRentals' => Reservation::whereIn('status', ['released', 'overdue'])->count(),
             'returnsDue' => Reservation::whereIn('status', ['released', 'overdue'])->whereDate('return_date', '<=', today())->count(),
             'cleaningCount' => CleaningRecord::where('status', 'pending')->count(),
             'base' => request()->user()->role,
-        ]);
-    }
-
-    public function employeeReservationForm(Gown $gown)
-    {
-        abort_unless($gown->status === 'available', 422, 'Only gowns currently marked available can start a new reservation.');
-        return view('management.reservation-create', [
-            'customers' => Customer::where('status', 'active')->orderBy('full_name')->get(),
-            'gown' => $gown,
-            'lateFeePerDay' => (float) SystemSetting::where('setting_key', 'late_fee_per_day')->value('setting_value'),
         ]);
     }
 
@@ -46,7 +125,8 @@ class ManagementController extends Controller
             'customer_name' => ['required_without:existing_customer_id', 'nullable', 'string', 'max:255'],
             'customer_email' => ['nullable', 'email', 'max:255'],
             'contact_number' => ['required_without:existing_customer_id', 'nullable', 'string', 'max:40'],
-            'gown_id' => ['required', 'exists:gowns,id'],
+            'gown_ids' => ['nullable', 'array'],
+            'gown_ids.*' => ['integer', 'distinct', 'exists:gowns,id'],
             'pickup_date' => ['required', 'date', 'after_or_equal:today'],
             'return_date' => ['required', 'date', 'after_or_equal:pickup_date'],
             'bust' => ['nullable', 'numeric', 'min:0', 'max:300'],
@@ -81,20 +161,35 @@ class ManagementController extends Controller
         $measurements = collect(['Bust' => $data['bust'] ?? null, 'Waist' => $data['waist'] ?? null, 'Hips' => $data['hips'] ?? null, 'Length' => $data['length'] ?? null])
             ->filter(fn($value) => $value !== null)->map(fn($value, $key) => $key . ': ' . $value . ' cm')->values()->join('; ');
 
-        $reservation = DB::transaction(function () use ($request, $data, $customer, $idPath, $measurements, $lateFeePerDay) {
-            $gown = Gown::whereKey($data['gown_id'])->lockForUpdate()->firstOrFail();
-            abort_unless($gown->status === 'available', 422, 'This gown is not currently available for new reservations.');
-            $overlap = Reservation::with('gownReturn')->whereNotIn('status', ['cancelled', 'rejected'])
-                ->whereHas('items', fn($items) => $items->where('gown_id', $gown->id))->get()
-                ->contains(function ($existing) use ($data) {
-                    $end = $existing->gownReturn?->actual_return_date ?? $existing->return_date;
-                    return Carbon::parse($existing->pickup_date)->startOfDay()->lte(Carbon::parse($data['return_date'])->startOfDay())
-                        && Carbon::parse($end)->startOfDay()->gte(Carbon::parse($data['pickup_date'])->startOfDay());
-                });
-            if ($overlap)
-                throw ValidationException::withMessages(['gown_id' => 'This gown is already booked or in its cleaning period for those dates.']);
+        // Fall back to the staff cart when the form did not carry explicit ids,
+        // so the Shopee-style "reserve everything in the cart" flow always works.
+        $gownIds = array_values(array_filter((array) ($data['gown_ids'] ?? [])));
+        if ($gownIds === []) {
+            $gownIds = $this->reservationCart()->ids();
+        }
+        if ($gownIds === []) {
+            throw ValidationException::withMessages(['gown_ids' => 'Add at least one gown before saving this reservation.']);
+        }
 
-            $total = (float) $gown->rental_price;
+        $reservation = DB::transaction(function () use ($request, $data, $gownIds, $customer, $idPath, $measurements, $lateFeePerDay) {
+            $gowns = Gown::whereIn('id', $gownIds)->lockForUpdate()->get();
+            if ($gowns->count() !== count(array_unique($gownIds))) {
+                throw ValidationException::withMessages(['gown_ids' => 'One of the selected gowns could not be found.']);
+            }
+            foreach ($gowns as $gown) {
+                abort_unless($gown->status === 'available', 422, $gown->name . ' is not currently available for new reservations.');
+                $overlap = Reservation::with('gownReturn')->whereNotIn('status', ['cancelled', 'rejected'])
+                    ->whereHas('items', fn($items) => $items->where('gown_id', $gown->id))->get()
+                    ->contains(function ($existing) use ($data) {
+                        $end = $existing->gownReturn?->actual_return_date ?? $existing->return_date;
+                        return Carbon::parse($existing->pickup_date)->startOfDay()->lte(Carbon::parse($data['return_date'])->startOfDay())
+                            && Carbon::parse($end)->startOfDay()->gte(Carbon::parse($data['pickup_date'])->startOfDay());
+                    });
+                if ($overlap)
+                    throw ValidationException::withMessages(['gown_ids' => $gown->name . ' is already booked or in its cleaning period for those dates.']);
+            }
+
+            $total = round($gowns->sum(fn($gown) => (float) $gown->rental_price), 2);
             if ((float) $data['payment_amount'] > $total)
                 throw ValidationException::withMessages(['payment_amount' => 'Payment cannot exceed the rental fee.']);
             if ((float) $data['payment_amount'] < $total && (float) $data['payment_amount'] <= 500)
@@ -119,7 +214,14 @@ class ManagementController extends Controller
                 'agreement_accepted_at' => now(),
                 'collateral_status' => 'held',
             ]);
-            $booking->items()->create(['gown_id' => $gown->id, 'rental_price' => $total, 'security_deposit' => 0, 'quantity' => 1]);
+            $booking->items()->createMany(
+                $gowns->map(fn($gown) => [
+                    'gown_id' => $gown->id,
+                    'rental_price' => (float) $gown->rental_price,
+                    'security_deposit' => 0,
+                    'quantity' => 1,
+                ])->all()
+            );
             Payment::create([
                 'reservation_id' => $booking->id,
                 'customer_id' => $customer->id,
@@ -134,6 +236,8 @@ class ManagementController extends Controller
             ]);
             return $booking;
         });
+
+        $this->reservationCart()->clear();
 
         return redirect()->route($request->user()->role . '.reservations')->with('success', 'In-store reservation ' . $reservation->reservation_code . ' created and payment recorded.');
     }
@@ -176,9 +280,32 @@ class ManagementController extends Controller
             'condition_after' => ['required', Rule::in(['excellent', 'good', 'fair', 'damaged'])],
             'notes' => ['nullable', 'string', 'max:1000'],
             'repair_cost' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
+            'purchased_gown_ids' => ['sometimes', 'array'],
+            'purchased_gown_ids.*' => ['integer', 'distinct'],
+            'purchase_amounts' => ['sometimes', 'array'],
+            'purchase_amounts.*' => ['nullable', 'numeric', 'min:0.01', 'max:1000000'],
         ]);
         $lateDays = max(0, Carbon::parse($reservation->return_date)->startOfDay()->diffInDays(today(), false));
-        DB::transaction(function () use ($request, $reservation, $data, $lateDays) {
+        $purchasedGownIds = collect($data['purchased_gown_ids'] ?? [])
+            ->map(fn($id) => (int) $id)
+            ->unique()
+            ->values();
+        $reservationGownIds = $reservation->items()->pluck('gown_id')->map(fn($id) => (int) $id);
+        if ($purchasedGownIds->diff($reservationGownIds)->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'purchased_gown_ids' => 'Only gowns in this reservation can be marked as purchased.',
+            ]);
+        }
+
+        foreach ($purchasedGownIds as $gownId) {
+            if (empty($data['purchase_amounts'][$gownId])) {
+                throw ValidationException::withMessages([
+                    'purchase_amounts.' . $gownId => 'Enter the agreed sale amount for each purchased gown.',
+                ]);
+            }
+        }
+
+        DB::transaction(function () use ($request, $reservation, $data, $lateDays, $purchasedGownIds) {
             $rentalReturn = GownReturn::updateOrCreate(['reservation_id' => $reservation->id], [
                 'processed_by' => $request->user()->id,
                 'actual_return_date' => today(),
@@ -192,17 +319,46 @@ class ManagementController extends Controller
                 $gown = $item->gown;
                 if (!$gown)
                     continue;
+                $customerPurchased = $purchasedGownIds->contains((int) $gown->id);
                 if ($data['condition_after'] === 'damaged') {
-                    $gown->update(['condition' => 'damaged', 'status' => 'damaged']);
+                    $gown->update([
+                        'condition' => 'damaged',
+                        'status' => $customerPurchased ? 'retired' : 'damaged',
+                    ]);
                     $repairCost = (float) ($data['repair_cost'] ?? 0);
-                    DamageReport::create(['gown_return_id' => $rentalReturn->id, 'gown_id' => $gown->id, 'damage_type' => 'Rental return damage', 'description' => $data['notes'] ?? 'Damage recorded during return inspection.', 'repair_cost' => $repairCost, 'severity' => 'moderate']);
-                    if ($repairCost > 0) {
+                    DamageReport::create(['gown_return_id' => $rentalReturn->id, 'gown_id' => $gown->id, 'damage_type' => 'Rental return damage', 'description' => $data['notes'] ?? 'Damage recorded during return inspection.', 'repair_cost' => $repairCost, 'final_repair_cost' => $repairCost, 'discovered_at' => today(), 'severity' => 'moderate']);
+                    if ($repairCost > 0 && !$customerPurchased) {
                         Penalty::create(['reservation_id' => $reservation->id, 'gown_return_id' => $rentalReturn->id, 'penalty_type' => 'damage_fee', 'amount' => $repairCost, 'status' => 'pending']);
                         $extraCharges += $repairCost;
                     }
                 } else {
-                    $gown->update(['status' => 'for_cleaning']);
-                    CleaningRecord::create(['gown_id' => $gown->id, 'processed_by' => $request->user()->id, 'cleaning_date' => today(), 'cleaning_type' => 'Post-rental cleaning', 'status' => 'pending', 'notes' => 'Created after reservation ' . $reservation->reservation_code]);
+                    $gown->update([
+                        'condition' => $data['condition_after'],
+                        'status' => $customerPurchased ? 'retired' : 'for_cleaning',
+                    ]);
+                    if (!$customerPurchased) {
+                        CleaningRecord::create(['gown_id' => $gown->id, 'processed_by' => $request->user()->id, 'cleaning_date' => today(), 'cleaning_type' => 'Post-rental cleaning', 'status' => 'pending', 'notes' => 'Created after reservation ' . $reservation->reservation_code]);
+                    }
+                }
+
+                if ($customerPurchased) {
+                    $purchaseAmount = (float) $data['purchase_amounts'][$gown->id];
+                    GownPurchase::create([
+                        'reservation_id' => $reservation->id,
+                        'gown_return_id' => $rentalReturn->id,
+                        'gown_id' => $gown->id,
+                        'processed_by' => $request->user()->id,
+                        'amount' => $purchaseAmount,
+                        'purchased_at' => now(),
+                    ]);
+                    Penalty::create([
+                        'reservation_id' => $reservation->id,
+                        'gown_return_id' => $rentalReturn->id,
+                        'penalty_type' => 'gown_purchase',
+                        'amount' => $purchaseAmount,
+                        'status' => 'pending',
+                    ]);
+                    $extraCharges += $purchaseAmount;
                 }
             }
             $lateFee = (float) $reservation->late_fee_per_day;
@@ -237,10 +393,17 @@ class ManagementController extends Controller
         return back()->with('success', 'Cleaning completed; the gown is available again.');
     }
 
-    public function maintenance()
+    public function maintenance(Request $request)
     {
+        $perPage = in_array($request->integer('per_page', 12), [12, 24, 48], true)
+            ? $request->integer('per_page', 12)
+            : 12;
+
         return view('management.maintenance', [
-            'maintenanceRecords' => MaintenanceRecord::with(['gown', 'processedBy'])->latest()->paginate(15),
+            'maintenanceRecords' => MaintenanceRecord::with(['gown', 'processedBy'])
+                ->latest()
+                ->paginate($perPage)
+                ->withQueryString(),
             'gowns' => Gown::whereNull('archived_at')->whereNotIn('status', ['retired', 'rented'])->orderBy('name')->get(),
             'base' => request()->user()->role,
         ]);
@@ -322,7 +485,27 @@ class ManagementController extends Controller
                 $term = $request->string('q');
                 $q->where('reservation_code', 'like', "%$term%")->orWhereHas('customer', fn($c) => $c->where('full_name', 'like', "%$term%"));
             });
-        return view('management.reservations', ['reservations' => $query->paginate(12)->withQueryString(), 'base' => $request->user()->role]);
+        return view('management.reservations', [
+            'reservations' => $query->paginate($this->pageSize($request))->withQueryString(),
+            'base' => $request->user()->role,
+        ]);
+    }
+
+    public function reservationDetails(Reservation $reservation)
+    {
+        $reservation->load([
+            'customer',
+            'items.gown.category',
+            'payments',
+            'gownRelease',
+            'gownReturn',
+            'penalties',
+        ]);
+
+        return view('management.reservation-show', [
+            'reservation' => $reservation,
+            'base' => request()->user()->role,
+        ]);
     }
 
     public function updateReservation(Request $request, Reservation $reservation)
@@ -397,7 +580,7 @@ class ManagementController extends Controller
         return back()->with('success', 'Reservation status updated.');
     }
 
-    public function customers()
+    public function customers(Request $request)
     {
         $query = Customer::withCount('reservations')->with('reservations')->latest();
         if (request()->filled('q')) {
@@ -406,22 +589,45 @@ class ManagementController extends Controller
                 ->orWhere('email', 'like', "%$term%")
                 ->orWhere('contact_number', 'like', "%$term%"));
         }
-        return view('management.customers', ['customers' => $query->paginate(15)->withQueryString()]);
+        return view('management.customers', [
+            'customers' => $query->paginate($this->pageSize($request))->withQueryString(),
+        ]);
     }
 
-    public function customerDetails(Customer $customer)
+    public function updateCustomer(Request $request, Customer $customer)
     {
-        $customer->load([
-            'reservations' => fn($query) => $query->latest(),
-            'reservations.items.gown',
-            'reservations.payments' => fn($query) => $query->latest(),
-            'reservations.penalties' => fn($query) => $query->latest(),
-            'reservations.gownReturn',
-            'reservations.cancelledBy',
+        $data = $request->validate([
+            'full_name' => ['required', 'string', 'max:255'],
         ]);
+
+        DB::transaction(function () use ($customer, $data) {
+            $customer->update(['full_name' => $data['full_name']]);
+
+            if ($customer->user_id) {
+                $customer->user()->update(['name' => $data['full_name']]);
+            }
+        });
+
+        return back()->with('success', 'Customer name updated. The new name is now shown on all linked reservation and payment history.');
+    }
+
+    public function customerDetails(Request $request, Customer $customer)
+    {
+        $reservations = $customer->reservations()
+            ->with([
+                'items.gown',
+                'gownPurchases.gown',
+                'payments' => fn($query) => $query->latest(),
+                'penalties' => fn($query) => $query->latest(),
+                'gownReturn',
+                'cancelledBy',
+            ])
+            ->latest()
+            ->paginate($this->pageSize($request))
+            ->withQueryString();
         $lateFeePerDay = (float) SystemSetting::where('setting_key', 'late_fee_per_day')->value('setting_value');
 
-        foreach ($customer->reservations as $reservation) {
+        foreach ($reservations as $reservation) {
             $actualLateDays = (int) ($reservation->gownReturn?->late_days ?? 0);
             $currentLateDays = 0;
             if (!$reservation->gownReturn && in_array($reservation->status, ['released', 'overdue'], true) && $reservation->return_date?->isBefore(today())) {
@@ -441,14 +647,20 @@ class ManagementController extends Controller
 
         return view('management.customer-show', [
             'customer' => $customer,
+            'reservations' => $reservations,
+            'reservationCount' => $customer->reservations()->count(),
+            'verifiedPaid' => Payment::whereHas('reservation', fn($query) => $query->where('customer_id', $customer->id))
+                ->where('status', 'verified')
+                ->sum('amount'),
+            'outstandingBalance' => $customer->reservations()->sum('balance'),
             'lateFeePerDay' => $lateFeePerDay,
             'base' => request()->user()->role,
         ]);
     }
 
-    public function payments()
+    public function payments(Request $request)
     {
-        $filters = request()->validate([
+        $filters = $request->validate([
             'q' => ['nullable', 'string', 'max:120'],
             'status' => ['nullable', Rule::in(['pending', 'verified', 'rejected', 'refunded'])],
             'method' => ['nullable', Rule::in(['cash', 'gcash'])],
@@ -487,7 +699,7 @@ class ManagementController extends Controller
         $reviewCount = $reviewQuery->count();
 
         return view('management.payments', [
-            'payments' => $query->paginate(25)->withQueryString(),
+            'payments' => $query->paginate($this->pageSize($request))->withQueryString(),
             'totalAmount' => $totalAmount,
             'totalCount' => (clone $query)->count(),
             'verifiedAmount' => $verifiedAmount,
@@ -573,9 +785,11 @@ class ManagementController extends Controller
         return back()->with('success', 'Payment ' . $payment->payment_reference . ' recorded.');
     }
 
-    public function employees()
+    public function employees(Request $request)
     {
-        return view('management.employees', ['employees' => Employee::with('user')->latest()->paginate(15)]);
+        return view('management.employees', [
+            'employees' => Employee::with('user')->latest()->paginate($this->pageSize($request))->withQueryString(),
+        ]);
     }
 
     public function createEmployeeForm()
@@ -583,7 +797,7 @@ class ManagementController extends Controller
         return view('management.employee-create');
     }
 
-    public function employeeDetails(Employee $employee)
+    public function employeeDetails(Request $request, Employee $employee)
     {
         $userId = $employee->user_id;
         $activities = collect()
@@ -613,6 +827,16 @@ class ManagementController extends Controller
                 'description' => $row->payment_reference . ' · Reservation ' . ($row->reservation?->reservation_code ?? '—') . ' · ₱' . number_format((float) $row->amount, 2),
             ]))
             ->sortByDesc('date')->values();
+
+        $pageSize = $this->pageSize($request);
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $activities = new LengthAwarePaginator(
+            $activities->forPage($currentPage, $pageSize),
+            $activities->count(),
+            $pageSize,
+            $currentPage,
+            ['path' => LengthAwarePaginator::resolveCurrentPath(), 'query' => $request->query()],
+        );
 
         return view('management.employee-show', compact('employee', 'activities'));
     }

@@ -45,7 +45,7 @@
                     <span class="sb-kicker">QUICK SEARCH</span>
                     <h2 id="find-gown-heading">Find a gown</h2>
                 </div>
-                <form action="{{ route('customer.catalog') }}" method="GET" class="sb-customer-find-form">
+                <form action="{{ route('customer.catalog') }}" method="GET" class="sb-customer-find-form" data-live-filter>
                     <label class="sb-visually-hidden" for="customer-gown-search">Search by gown name, style, or
                         code</label>
                     <input id="customer-gown-search" type="search" name="search"
@@ -90,12 +90,26 @@
                         </a>
                         <div class="sb-product-info"><small>{{ $gown->category->name ?? 'GOWN' }}</small>
                             <h3>{{ $gown->name }}</h3>
-                            <div><b>&#8369;{{ number_format($gown->rental_price, 0) }}</b><span>/ rental</span><a
-                                    href="{{ route('customer.reserve', $gown) }}">Reserve &rarr;</a></div>
+                            <div>
+                                <b>&#8369;{{ number_format($gown->rental_price, 0) }}</b><span>/ rental</span>
+                                <div class="sb-card-actions">
+                                    <a class="sb-card-reserve-btn" href="{{ route('customer.reserve.gown', $gown) }}">Reserve Now</a>
+                                    <form method="POST" action="{{ route('customer.cart.add', $gown) }}" class="sb-card-cart-form">
+                                        @csrf
+                                        <button type="submit" class="sb-card-cart-btn" title="Add to cart"
+                                            aria-label="Add {{ $gown->name }} to cart">
+                                            <svg><use href="#sb-i-cart" /></svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                     </article>
                 @empty
-                    <div class="sb-panel sb-empty">No gowns are available to display yet.</div>
+                    <div class="sb-panel sb-empty">
+                        No gowns are available in the catalog yet. Please contact the boutique or ask an administrator
+                        to restore the gown inventory.
+                    </div>
                 @endforelse
             </div>
 

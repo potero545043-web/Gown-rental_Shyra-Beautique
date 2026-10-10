@@ -66,9 +66,7 @@
                 @endforelse
             </section>
 
-            @if($notifications->hasPages())
-                <div class="sb-pagination">{{ $notifications->links() }}</div>
-            @endif
+            @include('components.table-pagination', ['paginator' => $notifications, 'itemLabel' => 'notifications'])
         </div>
     </div>
 </x-app-layout>

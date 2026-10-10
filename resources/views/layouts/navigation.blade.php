@@ -14,7 +14,6 @@
         'owner' => [
             'OPERATIONS' => [
                 ['Overview', 'owner.dashboard', 'grid'],
-                ['Notifications', 'owner.notifications', 'bell'],
                 ['Catalog', 'owner.catalog', 'dress'],
                 ['Reservations', 'owner.reservations', 'calendar'],
                 ['Rentals & returns', 'owner.rentals', 'calendar'],
@@ -25,6 +24,7 @@
             ],
             'MANAGEMENT' => [
                 ['Employees', 'owner.employees', 'team'],
+                ['Archive', 'owner.archive', 'dress'],
                 ['Reports', 'owner.reports', 'chart'],
                 ['Settings', 'owner.settings', 'tag'],
             ],
@@ -34,7 +34,6 @@
         'employee' => [
             'OPERATIONS' => [
                 ['Overview', 'employee.dashboard', 'grid'],
-                ['Notifications', 'employee.notifications', 'bell'],
                 ['Reservations', 'employee.reservations', 'calendar'],
                 ['Rentals & returns', 'employee.rentals', 'calendar'],
             ],
@@ -49,7 +48,6 @@
                 ['Dashboard', 'customer.dashboard', 'grid'],
                 ['Collection', 'customer.catalog', 'dress'],
                 ['My Reservations', 'customer.reservations', 'calendar'],
-                ['Notifications', 'customer.notifications', 'bell'],
             ],
         ],
     };
@@ -60,14 +58,20 @@
             || (str_ends_with($routeName, '.catalog') && request()->routeIs($routeName . '.*'))
             || ($routeName === 'owner.gowns.index' && request()->routeIs('owner.gowns.*'))
             || ($routeName === 'owner.categories.index' && request()->routeIs('owner.categories.*'))
-            || ($routeName === 'owner.accessories.index' && request()->routeIs('owner.accessories.*'));
+            || ($routeName === 'owner.accessories.index' && request()->routeIs('owner.accessories.*'))
+            || ($routeName === 'owner.damages' && request()->routeIs('owner.damages*'))
+            || ($routeName === 'owner.purchases' && request()->routeIs('owner.purchases*'));
 
         return $active ? 'is-active' : '';
     };
 
-    $inventoryRoutes = ['owner.gowns.*', 'owner.categories.*', 'owner.accessories.*', 'owner.maintenance'];
+    $inventoryRoutes = ['owner.gowns.*', 'owner.categories.*', 'owner.accessories.*', 'owner.maintenance', 'owner.damages*', 'owner.purchases*'];
     $hasPending = $role !== 'customer' && \App\Models\Reservation::where('status', 'pending')->exists();
-    $unreadNotifications = auth()->user()->unreadNotifications()->count();
+
+    $cartRole = in_array($role, ['customer', 'employee', 'owner'], true) ? $role : null;
+    $cartCount = $cartRole
+        ? \App\Services\ReservationCart::forRole($cartRole)->count()
+        : 0;
 @endphp
 
 {{-- ICON LIBRARY --}}
@@ -116,6 +120,11 @@
         <circle cx="12" cy="8" r="4" />
         <path d="M4 21a8 8 0 0 1 16 0" />
     </symbol>
+    <symbol id="sb-i-cart" viewBox="0 0 24 24">
+        <path d="M3 4h2l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.2L21 7H6" />
+        <circle cx="9.5" cy="20" r="1.4" />
+        <circle cx="17.5" cy="20" r="1.4" />
+    </symbol>
     <symbol id="sb-i-logout" viewBox="0 0 24 24">
         <path d="M10 17l5-5-5-5m5 5H3m10-9h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" />
     </symbol>
@@ -138,7 +147,7 @@
     @foreach($sections as $sectionLabel => $sectionLinks)
         <div class="sb-sidebar-caption">{{ $sectionLabel }}</div>
 
-        <nav class="sb-side-links">
+        <nav class="sb-side-links" data-nav-section="{{ \Illuminate\Support\Str::slug($sectionLabel) }}">
             @foreach($sectionLinks as [$label, $routeName, $icon])
                 <a class="sb-side-link {{ $isActive($routeName) }}" href="{{ route($routeName) }}">
                     <svg>
@@ -148,11 +157,22 @@
                     @if($label === 'Reservations' && $hasPending)
                         <i class="sb-side-dot"></i>
                     @endif
-                    @if($label === 'Notifications' && $unreadNotifications > 0)
-                        <span class="sb-notification-count">{{ $unreadNotifications > 99 ? '99+' : $unreadNotifications }}</span>
-                    @endif
                 </a>
             @endforeach
+
+            {{-- MY CART: each role can bundle gowns into one booking --}}
+            @if($cartRole && ($sectionLabel === 'OPERATIONS' || ($role === 'customer' && $sectionLabel === 'MY ACCOUNT')))
+                <a class="sb-side-link {{ request()->routeIs('*.cart') ? 'is-active' : '' }}"
+                    href="{{ route($cartRole . '.cart') }}">
+                    <svg>
+                        <use href="#sb-i-cart" />
+                    </svg>
+                    <span>My Cart</span>
+                    @if($cartCount > 0)
+                        <span class="sb-notification-count">{{ $cartCount > 99 ? '99+' : $cartCount }}</span>
+                    @endif
+                </a>
+            @endif
 
             {{-- Inventory dropdown (owner only) --}}
             @if($role === 'owner' && $sectionLabel === 'BUSINESS')
@@ -174,6 +194,10 @@
                             href="{{ route('owner.accessories.index') }}">Accessories</a>
                         <a class="{{ request()->routeIs('owner.maintenance') ? 'is-active' : '' }}"
                             href="{{ route('owner.maintenance') }}">Maintenance</a>
+                        <a class="{{ request()->routeIs('owner.damages*') ? 'is-active' : '' }}"
+                            href="{{ route('owner.damages') }}">Damage reports</a>
+                        <a class="{{ request()->routeIs('owner.purchases*') ? 'is-active' : '' }}"
+                            href="{{ route('owner.purchases') }}">Purchases</a>
                     </div>
                 </details>
             @endif

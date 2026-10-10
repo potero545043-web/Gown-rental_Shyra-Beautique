@@ -24,11 +24,15 @@ class AccessoryController extends Controller
         ];
     }
 
-    public function index()
+    public function index(Request $request)
     {
+        $perPage = in_array($request->integer('per_page', 12), [12, 24, 48], true)
+            ? $request->integer('per_page', 12)
+            : 12;
         $accessories = Accessory::withCount('gowns')
             ->latest()
-            ->get();
+            ->paginate($perPage)
+            ->withQueryString();
 
         return view('accessories.index', compact('accessories'));
     }

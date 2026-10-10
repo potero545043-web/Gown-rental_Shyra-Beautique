@@ -39,7 +39,7 @@
                         <h2>Pickup &amp; return queue</h2>
                         <p>Confirmed reservations, active rentals, and items due back.</p>
                     </div>
-                    <span class="sb-pill">{{ $rentals->count() }} {{ $rentals->count() === 1 ? 'record' : 'records' }}</span>
+                    <span class="sb-pill">{{ $rentals->total() }} {{ $rentals->total() === 1 ? 'record' : 'records' }}</span>
                 </div>
                 <div class="sb-table-wrap sb-ops-table-wrap">
                     <table class="sb-table sb-ops-table sb-ops-table--rentals">
@@ -125,6 +125,32 @@
                                                     </label>
                                                     <label>Repair fee if damaged<input type="number" min="0" step="0.01"
                                                             name="repair_cost" placeholder="₱0.00"></label>
+                                                    <fieldset class="sb-purchase-fieldset">
+                                                        <legend>Customer purchase (optional)</legend>
+                                                        <p>Purchased gowns are marked sold and removed from future rentals. Enter a sale price for each selected gown.</p>
+                                                        @foreach($rental->items->unique('gown_id') as $item)
+                                                            @if($item->gown)
+                                                                <div class="sb-purchase-option">
+                                                                    <label>
+                                                                        <input type="checkbox" name="purchased_gown_ids[]"
+                                                                            value="{{ $item->gown->id }}"
+                                                                            @checked(in_array((string) $item->gown->id, (array) old('purchased_gown_ids', []), true))>
+                                                                        Customer is purchasing {{ $item->gown->name }}
+                                                                    </label>
+                                                                    <label>
+                                                                        Sale price (₱)
+                                                                        <input type="number" name="purchase_amounts[{{ $item->gown->id }}]"
+                                                                            min="0.01" max="1000000" step="0.01"
+                                                                            value="{{ old('purchase_amounts.' . $item->gown->id) }}"
+                                                                            placeholder="Enter agreed price">
+                                                                    </label>
+                                                                    @error('purchase_amounts.' . $item->gown->id)
+                                                                        <small class="sb-field-error">{{ $message }}</small>
+                                                                    @enderror
+                                                                </div>
+                                                            @endif
+                                                        @endforeach
+                                                    </fieldset>
                                                     <label>Inspection note<input name="notes"
                                                             placeholder="Condition or issue observed"></label>
                                                     <button class="sb-small-btn">Save return</button>
@@ -162,6 +188,12 @@
                         </tbody>
                     </table>
                 </div>
+                @include('components.table-pagination', [
+                    'paginator' => $rentals,
+                    'parameter' => 'rentals_per_page',
+                    'pageParameter' => 'rentals_page',
+                    'itemLabel' => 'records',
+                ])
             </section>
 
             {{-- GOWNS TO CLEAN --}}
@@ -171,7 +203,7 @@
                         <h2>Gowns to clean</h2>
                         <p>Complete a cleaning check before returning a gown to the available collection.</p>
                     </div>
-                    <span class="sb-pill">{{ $cleanings->count() }} waiting</span>
+                    <span class="sb-pill">{{ $cleanings->total() }} waiting</span>
                 </div>
 
                 <div class="sb-table-wrap sb-ops-table-wrap">
@@ -213,6 +245,12 @@
                         </tbody>
                     </table>
                 </div>
+                @include('components.table-pagination', [
+                    'paginator' => $cleanings,
+                    'parameter' => 'cleanings_per_page',
+                    'pageParameter' => 'cleanings_page',
+                    'itemLabel' => 'cleaning records',
+                ])
             </section>
 
         </div>

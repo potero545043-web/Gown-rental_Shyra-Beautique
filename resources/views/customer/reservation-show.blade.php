@@ -15,8 +15,11 @@
             <div class="sb-form-errors">{{ $errors->first() }}</div>@endif
 
             @php
-                $gown = $reservation->items->first()?->gown;
+                $gowns = $reservation->items->map(fn($item) => $item->gown)->filter();
+                $gown = $gowns->first();
+                $gownCount = $gowns->count();
                 $pending = (float) $reservation->payments->where('status', 'pending')->sum('amount');
+                $payableNow = max(0, (float) $reservation->balance - $pending);
                 $paid = (float) $reservation->amount_paid;
                 $paidDownPayment = (float) $reservation->payments
                     ->where('payment_type', 'downpayment')
@@ -33,9 +36,23 @@
                             href="{{ route('customer.gowns.show', $gown) }}" aria-label="{{ $gown->name }}"></a>
                     @endif
                     <div class="sb-reserve-summary-body">
-                        <span class="sb-kicker">YOUR GOWN</span>
-                        <h2>{{ $gown?->name ?? 'Gown booking' }}</h2>
-                        <p>{{ $gown?->category->name ?? 'The Collection' }} · Size {{ $gown?->size ?? 'Various' }}</p>
+                        <span class="sb-kicker">YOUR {{ $gownCount === 1 ? 'GOWN' : 'GOWNS' }}</span>
+                        <h2>{{ $gownCount === 1 ? ($gown?->name ?? 'Gown booking') : $gownCount . ' gowns in this reservation' }}</h2>
+                        <p>{{ $gowns->pluck('category.name')->filter()->unique()->join(' · ') ?: 'The Collection' }}</p>
+                        <div class="sb-cart-list">
+                            @foreach($gowns as $itemGown)
+                                <div class="sb-cart-item">
+                                    <a class="sb-cart-item-photo"
+                                        style="background-image:url('{{ $itemGown->image_url }}')"
+                                        href="{{ route('customer.gowns.show', $itemGown) }}"
+                                        aria-label="{{ $itemGown->name }}"></a>
+                                    <div class="sb-cart-item-info">
+                                        <b>{{ $itemGown->name }}</b>
+                                        <small>{{ $itemGown->gown_code }} · {{ $itemGown->size ?? 'Various' }}</small>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
                         <div class="sb-reserve-summary-rows">
                             <div><span>Reservation #</span><b>{{ $reservation->reservation_code }}</b></div>
                             <div><span>Booked on</span><b>{{ $reservation->created_at?->toFormattedDateString() }}</b>
@@ -44,7 +61,8 @@
                         <div class="sb-reserve-summary-total"><span>Rental
                                 fee</span><b>₱{{ number_format($reservation->rental_total, 2) }}</b></div>
                         <div class="sb-reserve-summary-note">Bring one valid government-issued ID when you collect the
-                            gown. Staff will keep it securely as a record and return it after the gown is returned.
+                            gown{{ $gownCount === 1 ? '' : 's' }}. Staff will keep it securely as a record and return it
+                            after the gown{{ $gownCount === 1 ? '' : 's' }} are returned.
                         </div>
                     </div>
                 </aside>
@@ -55,7 +73,7 @@
                             <div class="sb-cancellation-receipt" role="status">
                                 <span class="sb-kicker">RESERVATION UPDATE</span>
                                 <h2>Reservation Cancelled</h2>
-                                <p>Your reservation for {{ $gown?->name ?? 'this gown' }} has been cancelled.</p>
+                                <p>Your reservation for {{ $gownCount === 1 ? ($gown?->name ?? 'this gown') : $gownCount . ' gowns' }} has been cancelled.</p>
                                 <div class="sb-cancellation-totals">
                                     <div><span>Down payment</span><b>₱{{ number_format($paidDownPayment, 2) }}</b></div>
                                     <div><span>Refund</span><b>₱0.00</b></div>
@@ -69,7 +87,7 @@
                             <div class="sb-confirm-hero">
                                 <span class="sb-confirm-tick">✓</span>
                                 <h2>Reservation submitted</h2>
-                                <p>{{ $gown?->name }} is requested. Staff will verify your agreement and payment before it
+                                <p>{{ $gownCount === 1 ? $gown?->name : $gownCount . ' gowns' }} requested. Staff will verify your agreement and payment before it
                                     is confirmed.</p>
                                 <span class="sb-status sb-status-pending"><span class="sb-status-dot is-pending"></span>
                                     Pending Approval</span>
@@ -91,6 +109,9 @@
 
                             <h3 class="sb-section-title">Booking details</h3>
                             <div class="sb-confirm-list">
+                                <div><span>Gowns · {{ $gownCount }}</span>
+                                    <b>{{ $gowns->map(fn($g) => $g->name)->join(', ') ?: '—' }}</b>
+                                </div>
                                 <div><span>Pickup</span><b>{{ $reservation->pickup_date?->toFormattedDateString() }}</b>
                                 </div>
                                 <div><span>Return</span><b>{{ $reservation->return_date?->toFormattedDateString() }}</b>
@@ -108,6 +129,17 @@
                             @if($reservation->measurements)
                                 <p class="sb-form-intro">Recorded measurements: {{ $reservation->measurements }}</p>
                             @endif
+                            @if($reservation->gownPurchases->isNotEmpty())
+                                <h3 class="sb-section-title">Purchased gowns</h3>
+                                @foreach($reservation->gownPurchases as $purchase)
+                                    <div class="sb-customer-payment-row">
+                                        <span><b>{{ $purchase->gown?->name ?? 'Gown' }}</b>
+                                            <small>Purchased {{ $purchase->purchased_at?->toFormattedDateString() }}</small>
+                                        </span>
+                                        <span>₱{{ number_format($purchase->amount, 2) }}</span>
+                                    </div>
+                                @endforeach
+                            @endif
 
                             <h3 class="sb-section-title">Payment summary</h3>
                             <div class="sb-payment-breakdown">
@@ -115,7 +147,7 @@
                                 @if($penaltyTotal > 0)
                                 <div><span>Penalties</span><b>₱{{ number_format($penaltyTotal, 2) }}</b></div>@endif
                                 <div>
-                                    <span>Total</span><b>₱{{ number_format($reservation->grand_total + $penaltyTotal, 2) }}</b>
+                                    <span>Total</span><b>₱{{ number_format($reservation->grand_total, 2) }}</b>
                                 </div>
                                 <div><span>Paid to date</span><b>₱{{ number_format($paid, 2) }}</b></div>
                                 <div>
@@ -143,11 +175,38 @@
                                 <p class="sb-payment-empty">No payments submitted yet.</p>
                             @endforelse
 
+                            @if($payableNow > 0 && !in_array($reservation->status, ['cancelled', 'rejected', 'completed'], true))
+                                <form method="POST"
+                                    action="{{ route('customer.reservations.payments.store', $reservation) }}"
+                                    enctype="multipart/form-data" class="sb-customer-payment-form"
+                                    data-customer-payment-form>
+                                    @csrf
+                                    <h3>Submit a payment</h3>
+                                    <p>Cash payments remain pending until staff confirm them at the boutique.</p>
+                                    <label>Payment type
+                                        <select name="payment_type" required>
+                                            <option value="downpayment">Down payment</option>
+                                            <option value="rental_balance">Rental balance</option>
+                                            <option value="penalty">Penalty</option>
+                                            <option value="damage_fee">Damage fee</option>
+                                        </select>
+                                    </label>
+                                    <input type="hidden" name="payment_method" value="cash">
+                                    <p>Payment method <b>Cash</b></p>
+                                    <label>Amount (up to ₱{{ number_format($payableNow, 2) }})
+                                        <input type="number" name="amount" min="0.01" max="{{ $payableNow }}"
+                                            step="0.01" required>
+                                    </label>
+                                    <small>A down payment must be greater than ₱500.00.</small>
+                                    <button class="sb-small-btn">Submit cash payment for confirmation</button>
+                                </form>
+                            @endif
+
                             @if($reservation->penalties->isNotEmpty())
                                 <h3 class="sb-section-title">Penalties</h3>
                                 @foreach($reservation->penalties as $penalty)
                                     <div class="sb-customer-payment-row">
-                                        <span><b>{{ $penalty->penalty_type }}</b><small>{{ ucfirst($penalty->status) }}</small></span>
+                                        <span><b>{{ $penalty->penalty_type === 'gown_purchase' ? 'Gown purchase' : ucfirst(str_replace('_', ' ', $penalty->penalty_type)) }}</b><small>{{ ucfirst($penalty->status) }}</small></span>
                                         <span>₱{{ number_format($penalty->amount, 2) }}</span>
                                     </div>
                                 @endforeach
@@ -157,12 +216,12 @@
                                 @if(in_array($reservation->status, ['pending', 'awaiting_payment'], true))
                                     <button class="sb-small-btn sb-reject-btn" type="button" data-cancel-open
                                         data-cancel-action="{{ route('customer.reservations.cancel', $reservation) }}"
-                                        data-cancel-gown="{{ $gown?->name ?? 'Gown reservation' }}"
+                                        data-cancel-gown="{{ $gownCount === 1 ? ($gown?->name ?? 'Gown reservation') : $gownCount . ' gowns' }}"
                                         data-cancel-payment="{{ number_format($paidDownPayment, 2, '.', '') }}">
                                         Cancel Reservation
                                     </button>
                                 @endif
-                                <a class="sb-btn" href="{{ route('customer.reservations') }}">View Reservation</a>
+                                <a class="sb-btn" href="{{ route('customer.reservations') }}">Back</a>
                             </div>
                         @endif
                     </div>

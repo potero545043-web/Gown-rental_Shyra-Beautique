@@ -4,11 +4,14 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\{AuditLog, Gown, Customer, Payment, Reservation, SystemSetting};
+use App\Services\ReservationCart;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 
 class DashboardController extends Controller
@@ -18,6 +21,13 @@ class DashboardController extends Controller
 
     /** Bump when the rental terms change so acceptances stay auditable. */
     public const AGREEMENT_VERSION = 'v1.0';
+
+    private ReservationCart $cart;
+
+    public function __construct()
+    {
+        $this->cart = ReservationCart::forRole('customer');
+    }
 
     public function index()
     {
@@ -57,17 +67,96 @@ class DashboardController extends Controller
         return view('customer.gown-details', compact('gown'));
     }
 
-    public function reserve(Gown $gown)
+    /**
+     * Reserves one gown by starting (or replacing) the cart with it, so the
+     * single-gown entry point still works exactly as customers expect.
+     */
+    public function reserveGown(Gown $gown)
     {
         abort_unless(in_array($gown->status, ['available', 'reserved', 'rented'], true), 404);
-        $gown->load('category');
-        $lateFeePerDay = (float) SystemSetting::where('setting_key', 'late_fee_per_day')->value('setting_value');
+
+        $this->cart->add($gown->id);
+
+        return $this->renderReservationWizard();
+    }
+
+    /** Opens the multi-gown reservation wizard for whatever is already in the cart. */
+    public function reserve()
+    {
+        return $this->renderReservationWizard();
+    }
+
+    /** Adds a gown to the in-progress reservation and opens the cart. */
+    public function addToCart(Request $request, Gown $gown)
+    {
+        abort_unless(in_array($gown->status, ['available', 'reserved', 'rented'], true), 422, 'This gown cannot be added to a reservation right now.');
+        abort_if($gown->archived_at !== null, 422, 'This gown is no longer in the collection.');
+
+        $this->cart->add($gown->id);
+
+        return back()->with('success', $gown->name . ' was added to your cart. Add more gowns, then open My Cart to reserve them together.');
+    }
+
+    /** Shows the My Cart page where every added gown waits for a bulk checkout. */
+    public function cart()
+    {
+        return view('customer.cart', [
+            'gowns' => $this->cart->gowns(),
+            'rentalTotal' => $this->cart->total(),
+            'lateFeePerDay' => (float) SystemSetting::where('setting_key', 'late_fee_per_day')->value('setting_value'),
+            'maxRentalDays' => self::MAX_RENTAL_DAYS,
+        ]);
+    }
+
+    /** Removes a gown from the in-progress reservation. */
+    public function removeFromCart(Gown $gown)
+    {
+        $this->cart->remove($gown->id);
+
+        return redirect()->route('customer.cart')
+            ->with('success', $gown->name . ' was removed from your cart.');
+    }
+
+    public function clearCart()
+    {
+        $this->cart->clear();
+
+        return redirect()->route('customer.catalog')->with('success', 'Your cart was cleared.');
+    }
+
+    /** Builds the multi-gown reservation wizard with cart totals and availability. */
+    private function renderReservationWizard()
+    {
+        $gowns = $this->loadCartGowns();
+        if ($gowns->isEmpty()) {
+            return redirect()->route('customer.catalog')
+                ->with('success', 'Choose a gown to begin your reservation.');
+        }
         return view('customer.reserve', [
-            'gown' => $gown,
-            'lateFeePerDay' => $lateFeePerDay,
+            'gowns' => $gowns,
+            'lateFeePerDay' => (float) SystemSetting::where('setting_key', 'late_fee_per_day')->value('setting_value'),
             'maxRentalDays' => self::MAX_RENTAL_DAYS,
             'agreementVersion' => self::AGREEMENT_VERSION,
         ]);
+    }
+
+    /** @return array<int, string> Resolved-by-query availability rows keyed by gown id, ready for the client. */
+    private function availabilityMap(Collection $gowns, Carbon $pickup, Carbon $return): array
+    {
+        return $this->conflictsFor($gowns, $pickup, $return)
+            ->groupBy(fn($row) => $row['gown']->id)
+            ->map(fn($rows) => [
+                'from' => $rows->first()['from']->toDateString(),
+                'through' => $rows->first()['through']->toDateString(),
+                'status' => $rows->first()['status'],
+            ])
+            ->all();
+    }
+
+    /** Returns the gowns in the session cart, preserving the order they were added. */
+    private function loadCartGowns(): Collection
+    {
+        return $this->cart->gowns();
     }
 
     /**
@@ -86,16 +175,26 @@ class DashboardController extends Controller
         $pickup = Carbon::parse($data['pickup_date'])->startOfDay();
         $return = Carbon::parse($data['return_date'])->startOfDay();
         $days = $pickup->diffInDays($return);
-        $conflicts = $this->conflictsFor($gown, $pickup, $return);
 
-        $reason = null;
-        if ($days + 1 > self::MAX_RENTAL_DAYS) {
-            $reason = 'A gown may be rented for up to ' . self::MAX_RENTAL_DAYS . ' days from its pickup date.';
-        } elseif ($conflicts) {
-            $reason = 'This gown is already booked ' . $conflicts[0]['from']->toFormattedDateString()
-                . ' \u2013 ' . $conflicts[0]['through']->toFormattedDateString()
-                . '. Please pick different dates.';
+        $gowns = collect([$gown]);
+        $maxDays = self::MAX_RENTAL_DAYS;
+        if ($days + 1 > $maxDays) {
+            return response()->json([
+                'available' => false,
+                'reason' => 'A gown may be rented for up to ' . $maxDays . ' days from its pickup date.',
+                'summary' => null,
+                'rental_days' => $days + 1,
+                'conflicts' => [],
+            ]);
         }
+
+        $conflicts = $this->availabilityMap($gowns, $pickup, $return);
+        $blocked = $conflicts[$gown->id] ?? null;
+        $reason = $blocked
+            ? 'This gown is already booked ' . Carbon::parse($blocked['from'])->toFormattedDateString()
+                . ' \u2013 ' . Carbon::parse($blocked['through'])->toFormattedDateString()
+                . '. Please pick different dates.'
+            : null;
 
         return response()->json([
             'available' => $reason === null,
@@ -104,14 +203,19 @@ class DashboardController extends Controller
                 . ' \u00b7 Return ' . $return->toFormattedDateString() . ' \u00b7 Subject to staff approval' : null,
             'rental_days' => $days + 1,
             'conflicts' => array_map(fn($block) => [
-                'from' => $block['from']->toDateString(),
-                'through' => $block['through']->toDateString(),
+                'from' => $block['from'],
+                'through' => $block['through'],
                 'status' => $block['status'],
             ], $conflicts),
         ]);
     }
 
-    public function storeReservation(Request $request, Gown $gown)
+    /**
+     * Submits the whole reservation cart as ONE reservation with one line item
+     * per gown, so a customer reserving several gowns for the same dates signs a
+     * single agreement and makes a single payment.
+     */
+    public function storeReservation(Request $request)
     {
         $contactNumber = preg_replace('/\D/', '', (string) $request->input('contact_number', ''));
         $request->merge(['contact_number' => $contactNumber]);
@@ -132,6 +236,13 @@ class DashboardController extends Controller
             'contact_number.digits' => 'Format: 09XXXXXXXXX (11 digits).',
             'contact_number.regex' => 'Format: 09XXXXXXXXX (11 digits).',
         ]);
+
+        $gowns = $this->loadCartGowns();
+        if ($gowns->isEmpty()) {
+            return redirect()->route('customer.catalog')
+                ->with('success', 'Choose at least one gown to begin your reservation.');
+        }
+
         if (Carbon::parse($data['return_date'])->gt(Carbon::parse($data['pickup_date'])->addDays(self::MAX_RENTAL_DAYS - 1))) {
             throw \Illuminate\Validation\ValidationException::withMessages([
                 'return_date' => 'A gown may be rented for up to ' . self::MAX_RENTAL_DAYS . ' days from its pickup date.',
@@ -157,27 +268,38 @@ class DashboardController extends Controller
         ]);
 
         try {
-            $reservation = DB::transaction(function () use ($request, $gown, $customer, $user, $data, $measurements, $lateFeePerDay) {
-                $lockedGown = Gown::whereNull('archived_at')->whereKey($gown->id)->lockForUpdate()->firstOrFail();
-                abort_unless(in_array($lockedGown->status, ['available', 'reserved', 'rented'], true), 422, 'This gown cannot be reserved at this time.');
-                $conflicts = $this->conflictsFor($lockedGown, Carbon::parse($data['pickup_date']), Carbon::parse($data['return_date']));
-                if ($conflicts) {
-                    throw \Illuminate\Validation\ValidationException::withMessages(['pickup_date' => 'This gown is already reserved for some or all of those dates. Please choose another date range.']);
+            $reservation = DB::transaction(function () use ($request, $gowns, $customer, $user, $data, $measurements, $lateFeePerDay) {
+                // Reload every cart gown with a row lock so two customers cannot
+                // grab the same gown for overlapping dates at the same moment.
+                $lockedGowns = Gown::whereIn('id', $gowns->pluck('id'))
+                    ->whereNull('archived_at')
+                    ->lockForUpdate()
+                    ->get();
+                if ($lockedGowns->count() !== $gowns->count()) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['pickup_date' => 'One of the gowns in your reservation is no longer available. Please review your list and try again.']);
+                }
+                foreach ($lockedGowns as $lockedGown) {
+                    abort_unless(in_array($lockedGown->status, ['available', 'reserved', 'rented'], true), 422, $lockedGown->name . ' cannot be reserved at this time.');
+                }
+                $conflicts = $this->conflictsFor($lockedGowns, Carbon::parse($data['pickup_date']), Carbon::parse($data['return_date']));
+                if ($conflicts->isNotEmpty()) {
+                    $names = $conflicts->pluck('gown.name')->unique()->implode(', ');
+                    throw \Illuminate\Validation\ValidationException::withMessages(['pickup_date' => 'These gowns are already reserved for some or all of those dates: ' . $names . '. Remove the blocked gown(s) or pick a different date range.']);
                 }
 
-                $rentalFee = (float) $lockedGown->rental_price;
+                $rentalTotal = round($lockedGowns->sum(fn($gown) => (float) $gown->rental_price), 2);
                 $paymentAmount = (float) $data['payment_amount'];
-                if ($paymentAmount > $rentalFee) {
-                    throw \Illuminate\Validation\ValidationException::withMessages(['payment_amount' => 'Payment cannot be greater than the rental fee.']);
+                if ($paymentAmount > $rentalTotal) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['payment_amount' => 'Payment cannot be greater than the total rental fee.']);
                 }
                 if ($data['payment_option'] === 'downpayment' && $paymentAmount <= 500) {
-                    throw \Illuminate\Validation\ValidationException::withMessages(['payment_amount' => 'A down payment must be greater than ₱500.00 and less than the rental fee.']);
+                    throw \Illuminate\Validation\ValidationException::withMessages(['payment_amount' => 'A down payment must be greater than ₱500.00 and less than the total rental fee.']);
                 }
-                if ($data['payment_option'] === 'full' && round($paymentAmount, 2) !== round($rentalFee, 2)) {
-                    throw \Illuminate\Validation\ValidationException::withMessages(['payment_amount' => 'Full payment must equal the rental fee. Choose down payment to enter a smaller amount.']);
+                if ($data['payment_option'] === 'full' && round($paymentAmount, 2) !== $rentalTotal) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['payment_amount' => 'Full payment must equal the total rental fee. Choose down payment to enter a smaller amount.']);
                 }
-                if ($data['payment_option'] === 'downpayment' && $paymentAmount >= $rentalFee) {
-                    throw \Illuminate\Validation\ValidationException::withMessages(['payment_amount' => 'A down payment must be greater than zero and less than the full rental fee.']);
+                if ($data['payment_option'] === 'downpayment' && $paymentAmount >= $rentalTotal) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['payment_amount' => 'A down payment must be greater than zero and less than the total rental fee.']);
                 }
 
                 $booking = Reservation::create([
@@ -186,12 +308,12 @@ class DashboardController extends Controller
                     'created_by' => $user->id,
                     'pickup_date' => $data['pickup_date'],
                     'return_date' => $data['return_date'],
-                    'rental_total' => $rentalFee,
+                    'rental_total' => $rentalTotal,
                     'security_deposit_total' => 0,
                     'late_fee_per_day' => $lateFeePerDay,
-                    'grand_total' => $rentalFee,
+                    'grand_total' => $rentalTotal,
                     'amount_paid' => 0,
-                    'balance' => $rentalFee,
+                    'balance' => $rentalTotal,
                     'status' => 'pending',
                     'customer_notes' => $data['notes'] ?? null,
                     'measurements' => $measurements ?: null,
@@ -201,12 +323,15 @@ class DashboardController extends Controller
                     'payment_reference_number' => null,
                     'collateral_status' => 'not_received',
                 ]);
-                $booking->items()->create([
-                    'gown_id' => $lockedGown->id,
-                    'rental_price' => $rentalFee,
-                    'security_deposit' => 0,
-                    'quantity' => 1,
-                ]);
+
+                foreach ($lockedGowns as $gown) {
+                    $booking->items()->create([
+                        'gown_id' => $gown->id,
+                        'rental_price' => (float) $gown->rental_price,
+                        'security_deposit' => 0,
+                        'quantity' => 1,
+                    ]);
+                }
                 Payment::create([
                     'reservation_id' => $booking->id,
                     'customer_id' => $customer->id,
@@ -217,6 +342,7 @@ class DashboardController extends Controller
                     'status' => 'pending',
                     'remarks' => 'Cash payment awaiting staff confirmation.',
                 ]);
+
                 return $booking;
             });
         } catch (QueryException $exception) {
@@ -225,16 +351,28 @@ class DashboardController extends Controller
                 'reservation' => 'We could not submit your reservation (RES-500). Your request was not saved. Please try again or contact the boutique.',
             ]);
         }
-        return redirect()->route('customer.reservations.show', $reservation)->with('success', 'Reservation ' . $reservation->reservation_code . ' submitted. Staff will review your agreement and payment.');
+
+        session()->forget(ReservationCart::SESSION_KEY);
+
+        return redirect()->route('customer.reservations.show', $reservation)->with('success', 'Reservation ' . $reservation->reservation_code . ' submitted for ' . $gowns->count() . ' gown(s). Staff will review your agreement and payment.');
     }
 
     public function reservations()
     {
+        $pageSize = request()->integer('per_page', 12);
+        $pageSize = in_array($pageSize, [12, 24, 48], true) ? $pageSize : 12;
         $customer = Customer::where('user_id', auth()->id())->first();
-        $reservations = $customer ? Reservation::with(['items.gown', 'payments', 'gownReturn', 'gownRelease', 'penalties'])
+        $reservations = $customer ? Reservation::with(['items.gown', 'payments', 'gownReturn', 'gownRelease', 'penalties', 'gownPurchases.gown'])
             ->where('customer_id', $customer->id)
             ->latest()
-            ->get() : collect();
+            ->paginate($pageSize)
+            ->withQueryString() : new LengthAwarePaginator(
+                collect(),
+                0,
+                $pageSize,
+                LengthAwarePaginator::resolveCurrentPage(),
+                ['path' => request()->url(), 'query' => request()->query()],
+            );
 
         return view('customer.reservations', [
             'reservations' => $reservations,
@@ -246,9 +384,9 @@ class DashboardController extends Controller
     {
         $customer = Customer::where('user_id', auth()->id())->firstOrFail();
         abort_unless($reservation->customer_id === $customer->id, 404);
-        $reservation->load(['items.gown', 'payments', 'gownReturn', 'gownRelease', 'penalties', 'cancelledBy']);
+        $reservation->load(['items.gown', 'payments', 'gownReturn', 'gownRelease', 'penalties', 'gownPurchases.gown', 'cancelledBy']);
         $cancellationHistory = $reservation->status === 'cancelled'
-            ? AuditLog::where('description', 'like', '%' . $reservation->reservation_code . '%')->oldest()->get()
+            ? AuditLog::with('user')->where('description', 'like', '%' . $reservation->reservation_code . '%')->oldest()->get()
             : collect();
 
         return view('customer.reservation-show', [
@@ -345,29 +483,48 @@ class DashboardController extends Controller
 
     /**
      * Date blocks through the return date, so a gown can never be double-booked.
+     * Accepts every gown in the cart and returns one row per blocked (gown, reservation)
+     * pair so the caller knows exactly which gowns are unavailable.
      *
-     * @return array<int, array{from: \Illuminate\Support\Carbon, through: \Illuminate\Support\Carbon, status: string}>
+     * @param  Collection<int, Gown>  $gowns
+     * @return Collection<int, array{gown: Gown, from: Carbon, through: Carbon, status: string}>
      */
-    private function conflictsFor(Gown $gown, Carbon $pickup, Carbon $return): array
+    private function conflictsFor(Collection $gowns, Carbon $pickup, Carbon $return): Collection
     {
+        $gownIds = $gowns->pluck('id');
+        if ($gownIds->isEmpty()) {
+            return collect();
+        }
+
+        $gownsById = $gowns->keyBy('id');
+
         return Reservation::with('gownReturn')
             ->whereNotIn('status', ['cancelled', 'rejected'])
-            ->whereHas('items', fn($items) => $items->where('gown_id', $gown->id))
+            ->whereHas('items', fn($items) => $items->whereIn('gown_id', $gownIds))
             ->get()
-            ->filter(function ($existing) use ($pickup, $return) {
+            ->flatMap(function ($existing) use ($gownsById, $pickup, $return) {
                 $occupiedFrom = Carbon::parse($existing->pickup_date)->startOfDay();
                 $returnDate = $existing->gownReturn?->actual_return_date ?? $existing->return_date;
                 $occupiedThrough = Carbon::parse($returnDate)->startOfDay();
 
-                return $occupiedFrom->lte($return) && $occupiedThrough->gte($pickup);
+                if (!($occupiedFrom->lte($return) && $occupiedThrough->gte($pickup))) {
+                    return [];
+                }
+
+                return $existing->items
+                    ->pluck('gown_id')
+                    ->unique()
+                    ->filter(fn($gownId) => $gownsById->has($gownId))
+                    ->map(fn($gownId) => [
+                        'gown' => $gownsById->get($gownId),
+                        'from' => $occupiedFrom,
+                        'through' => $occupiedThrough,
+                        'status' => $existing->status,
+                    ])
+                    ->values()
+                    ->all();
             })
-            ->map(fn($existing) => [
-                'from' => Carbon::parse($existing->pickup_date)->startOfDay(),
-                'through' => Carbon::parse($existing->gownReturn?->actual_return_date ?? $existing->return_date)->startOfDay(),
-                'status' => $existing->status,
-            ])
-            ->values()
-            ->all();
+            ->values();
     }
 
     /**

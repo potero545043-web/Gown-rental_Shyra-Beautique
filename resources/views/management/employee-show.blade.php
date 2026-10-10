@@ -10,7 +10,7 @@
                 <div class="sb-gown-row"><form method="POST" action="{{ route('owner.employees.toggle', $employee) }}">@csrf @method('PATCH')<button class="sb-small-btn {{ $employee->status === 'active' ? 'sb-deactivate' : '' }}">{{ $employee->status === 'active' ? 'Deactivate employee' : 'Reactivate employee' }}</button></form></div>
             </section>
             <section class="sb-panel">
-                <div class="sb-panel-head"><div><h2>Work activity</h2><p>Recorded handoffs, returns, cleaning, maintenance, and payment work</p></div><span class="sb-pill">{{ $activities->count() }} activities</span></div>
+                <div class="sb-panel-head"><div><h2>Work activity</h2><p>Recorded handoffs, returns, cleaning, maintenance, and payment work</p></div><span class="sb-pill">{{ $activities->total() }} activities</span></div>
                 <div class="sb-table-wrap"><table class="sb-table"><thead><tr><th>DATE</th><th>ACTIVITY</th><th>DETAILS</th></tr></thead><tbody>
                     @forelse($activities as $activity)
                         <tr><td>{{ $activity['date']?->format('M d, Y h:i A') ?? '—' }}</td><td><strong>{{ $activity['action'] }}</strong></td><td>{{ $activity['description'] }}</td></tr>
@@ -18,6 +18,7 @@
                         <tr><td colspan="3" class="sb-empty">No recorded work activity for this employee yet.</td></tr>
                     @endforelse
                 </tbody></table></div>
+                @include('components.table-pagination', ['paginator' => $activities, 'itemLabel' => 'activities'])
             </section>
         </div>
     </div></div>

@@ -19,7 +19,8 @@
             @endif
 
             <div class="sb-payment-toolbar">
-                <form class="sb-payment-filters" method="GET" action="{{ route($base . '.payments') }}">
+                <form class="sb-payment-filters" method="GET" action="{{ route($base . '.payments') }}" data-live-filter>
+                    <input type="hidden" name="per_page" value="{{ $payments->perPage() }}">
                     <label class="sb-payment-search">
                         <span class="sb-visually-hidden">Search payments</span>
                         <input type="search" name="q" value="{{ $filters['q'] ?? '' }}"
@@ -149,8 +150,7 @@
                         </tbody>
                     </table>
                 </div>
-                @if($payments->hasPages())
-                <div class="sb-pagination">{{ $payments->links() }}</div>@endif
+                @include('components.table-pagination', ['paginator' => $payments, 'itemLabel' => 'payments'])
             </section>
 
             <dialog class="sb-payment-dialog" data-payment-dialog aria-labelledby="payment-dialog-title">

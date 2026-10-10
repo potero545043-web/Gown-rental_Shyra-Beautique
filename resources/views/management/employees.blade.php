@@ -176,16 +176,7 @@
 
 
                     {{-- PAGINATION --}}
-                    <div class="sb-pagination">
-                        <span class="sb-pagination-count">
-                            Showing {{ $employees->firstItem() ?? 0 }}–{{ $employees->lastItem() ?? 0 }}
-                            of {{ $employees->total() }}
-                        </span>
-
-                        @if($employees->hasPages())
-                            {{ $employees->links() }}
-                        @endif
-                    </div>
+                    @include('components.table-pagination', ['paginator' => $employees, 'itemLabel' => 'employees'])
 
                 </div>
 
@@ -297,26 +288,14 @@
                     </label>
 
                     <label>Password
-                        <span class="sb-employee-password" x-data="{ showPassword: false }">
-                            <input id="employee-password" x-bind:type="showPassword ? 'text' : 'password'"
-                                name="password" minlength="8" required autocomplete="new-password">
-                            <button type="button" x-on:click.prevent="showPassword = !showPassword"
-                                x-bind:aria-label="showPassword ? 'Hide password' : 'Show password'"
-                                x-bind:aria-pressed="showPassword">
-                                <svg x-show="!showPassword" aria-hidden="true" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="1.8">
-                                    <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
-                                    <circle cx="12" cy="12" r="3" />
-                                </svg>
-                                <svg x-show="showPassword" aria-hidden="true" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="1.8">
-                                    <path
-                                        d="m3 3 18 18M10.6 6.2A10.8 10.8 0 0 1 12 6c6.5 0 10 6 10 6a16 16 0 0 1-3.1 3.8M6.2 6.3C3.5 8 2 12 2 12s3.5 6 10 6c1.3 0 2.5-.3 3.5-.7" />
-                                    <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
-                                </svg>
-                            </button>
-                        </span>
-                        <small class="sb-side-drawer-help">Minimum 8 characters.</small>
+                        {{-- Passwords are never echoed back or stored in the page markup.
+                             The field starts empty, autocomplete is disabled, and it is
+                             cleared once submitted so nothing lingers in the browser. --}}
+                        <input type="password" id="employee-password" name="password" minlength="8" required
+                            autocomplete="new-password" autocapitalize="off" spellcheck="false"
+                            value="" oncontextmenu="return false" data-lpignore="true">
+                        <small class="sb-side-drawer-help">Minimum 8 characters. The password is stored only as a
+                            secure hash and is never shown again.</small>
                         <x-input-error :messages="$errors->get('password')" />
                     </label>
 

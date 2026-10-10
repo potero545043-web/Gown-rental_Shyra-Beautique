@@ -73,9 +73,11 @@
                             </p>
                         </div>
 
-                        <a class="sb-inventory-secondary" href="{{ route('owner.gowns.index', request()->boolean('archived') ? [] : ['archived' => 1]) }}">
-                            {{ request()->boolean('archived') ? 'Active inventory' : 'View archive' }}
-                        </a>
+                        @if(request()->boolean('archived'))
+                            <a class="sb-inventory-secondary" href="{{ route('owner.gowns.index') }}">
+                                Active inventory
+                            </a>
+                        @endif
                         @unless(request()->boolean('archived'))<button class="sb-inventory-primary sb-inventory-filter-add" type="button"
                             onclick="document.getElementById('gown-create-dialog').showModal()">
                             <span aria-hidden="true">＋</span>
@@ -86,8 +88,9 @@
 
 
                     {{-- FILTERS --}}
-                    <form method="GET" class="sb-inventory-filter">
+                    <form method="GET" class="sb-inventory-filter" data-live-filter>
                         @if(request()->boolean('archived'))<input type="hidden" name="archived" value="1">@endif
+                        <input type="hidden" name="per_page" value="{{ $gowns->perPage() }}">
 
                         <div class="sb-inventory-search">
 
@@ -97,6 +100,7 @@
                             <button class="sb-inventory-filter-submit" type="submit" aria-label="Search gowns">
                                 Search
                             </button>
+                            <span class="sb-live-hint" aria-hidden="true">Live</span>
 
                         </div>
 
@@ -188,11 +192,14 @@
                                             'for_cleaning',
                                             'under_maintenance' => ['Maintenance', 'is-maintenance'],
                                             'damaged' => ['Damaged', 'is-damaged'],
+                                            'retired' => ['Sold / retired', 'is-disabled'],
                                             default => ['Disabled', 'is-disabled'],
                                         };
                                     @endphp
 
-                                    <tr>
+                                    <tr class="sb-gown-row-link" data-href="{{ route('owner.gowns.show', $gown) }}"
+                                        tabindex="0" role="link"
+                                        aria-label="View details for {{ $gown->name }}">
 
                                         {{-- GOWN --}}
                                         <td data-label="Gown">
@@ -274,13 +281,25 @@
 
                                             <div class="sb-inventory-actions">
 
-                                                <a href="{{ route('owner.gowns.show', $gown) }}" class="sb-action-view">
-                                                    View
-                                                </a>
-
                                                 <a href="{{ route('owner.gowns.edit', $gown) }}" class="sb-action-edit">
                                                     Edit
                                                 </a>
+
+                                                @unless(request()->boolean('archived'))
+                                                    <form method="POST" action="{{ route('owner.gowns.archive', $gown) }}"
+                                                        data-confirm-title="Archive"
+                                                        data-confirm-accent="this gown?"
+                                                        data-confirm-message="You can restore this gown later from the Archive module."
+                                                        data-confirm-yes="Yes, archive"
+                                                        data-confirm-no="Keep gown">
+                                                        @csrf
+                                                        <button class="sb-retire" type="submit"
+                                                            @disabled(in_array($gown->status, ['reserved', 'rented'], true))
+                                                            title="{{ in_array($gown->status, ['reserved', 'rented'], true) ? 'Reserved or rented gowns cannot be archived.' : 'Move this gown to the archive.' }}">
+                                                            Archive
+                                                        </button>
+                                                    </form>
+                                                @endunless
 
                                             </div>
 
@@ -323,16 +342,7 @@
 
 
                     {{-- PAGINATION --}}
-                    <div class="sb-pagination">
-                        <span class="sb-pagination-count">
-                            Showing {{ $gowns->firstItem() ?? 0 }}–{{ $gowns->lastItem() ?? 0 }} of
-                            {{ $gowns->total() }}
-                        </span>
-
-                        @if($gowns->hasPages())
-                            {{ $gowns->links() }}
-                        @endif
-                    </div>
+                    @include('components.table-pagination', ['paginator' => $gowns, 'itemLabel' => 'gowns'])
 
                 </div>
 

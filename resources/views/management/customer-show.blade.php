@@ -10,6 +10,10 @@
                 <a class="sb-outline-btn" href="{{ route($base . '.customers') }}">Back to customers</a>
             </div>
 
+            @if(session('success'))
+                <div class="sb-success">{{ session('success') }}</div>
+            @endif
+
             <section class="sb-panel sb-customer-detail-summary">
                 <div class="sb-panel-head">
                     <div>
@@ -18,13 +22,32 @@
                     </div><span class="sb-status">{{ ucfirst($customer->status) }}</span>
                 </div>
                 <div class="sb-booking-info">
-                    <div><small>RESERVATIONS</small><b>{{ $customer->reservations->count() }}</b></div>
+                    <div><small>RESERVATIONS</small><b>{{ $reservationCount }}</b></div>
                     <div><small>VERIFIED
-                            PAID</small><b>₱{{ number_format($customer->reservations->flatMap->payments->where('status', 'verified')->sum('amount'), 2) }}</b>
+                            PAID</small><b>₱{{ number_format($verifiedPaid, 2) }}</b>
                     </div>
                     <div><small>OUTSTANDING
-                            BALANCE</small><b>₱{{ number_format($customer->reservations->sum('balance'), 2) }}</b></div>
+                            BALANCE</small><b>₱{{ number_format($outstandingBalance, 2) }}</b></div>
                 </div>
+            </section>
+
+            <section class="sb-panel sb-customer-name-editor">
+                <div class="sb-panel-head">
+                    <div>
+                        <h2>Edit customer name</h2>
+                        <p>Updating this customer record also updates the name shown in all linked reservations and payments.</p>
+                    </div>
+                </div>
+                <form method="POST" action="{{ route($base . '.customers.update', $customer) }}" class="sb-customer-name-form">
+                    @csrf
+                    @method('PATCH')
+                    <label for="customer-full-name">Full name</label>
+                    <input id="customer-full-name" name="full_name" value="{{ old('full_name', $customer->full_name) }}" required maxlength="255">
+                    @error('full_name')
+                        <span class="sb-field-error">{{ $message }}</span>
+                    @enderror
+                    <button class="sb-btn" type="submit">Save name</button>
+                </form>
             </section>
 
             <div class="sb-section-head">
@@ -33,7 +56,7 @@
                     <p>Gowns, rental dates, late returns, and account payments</p>
                 </div>
             </div>
-            @forelse($customer->reservations as $reservation)
+            @forelse($reservations as $reservation)
                 <section class="sb-panel sb-customer-reservation-card">
                     <div class="sb-panel-head">
                         <div><span class="sb-kicker">{{ $reservation->reservation_code }}</span>
@@ -67,7 +90,7 @@
                                     <summary>View Reservation History</summary>
                                     <ol>
                                         @foreach($reservation->cancellation_history as $event)
-                                            <li><time>{{ $event->created_at?->format('M d, g:i A') }}</time> {{ $event->description }}</li>
+                                            <li><time>{{ $event->created_at?->format('M d, g:i A') }}</time> {{ $event->display_description }}</li>
                                         @endforeach
                                     </ol>
                                 </details>
@@ -103,6 +126,18 @@
                             </tbody>
                         </table>
                     </div>
+                    @if($reservation->gownPurchases->isNotEmpty())
+                        <div class="sb-purchase-history">
+                            <h3 class="sb-section-subtitle">Gowns purchased by customer</h3>
+                            @foreach($reservation->gownPurchases as $purchase)
+                                <p>
+                                    <strong>{{ $purchase->gown?->name ?? 'Gown' }}</strong>
+                                    · ₱{{ number_format($purchase->amount, 2) }}
+                                    · {{ $purchase->purchased_at?->format('M d, Y') }}
+                                </p>
+                            @endforeach
+                        </div>
+                    @endif
 
                     <div class="sb-customer-finance-grid">
                         <div>
@@ -152,7 +187,7 @@
                                     <tbody>
                                         @forelse($reservation->penalties as $penalty)
                                             <tr>
-                                                <td>{{ ucfirst(str_replace('_', ' ', $penalty->penalty_type)) }}</td>
+                                                <td>{{ $penalty->penalty_type === 'gown_purchase' ? 'Gown purchase' : ucfirst(str_replace('_', ' ', $penalty->penalty_type)) }}</td>
                                                 <td>₱{{ number_format($penalty->amount, 2) }}</td>
                                                 <td>{{ ucfirst($penalty->status) }}</td>
                                             </tr>
@@ -176,6 +211,7 @@
             @empty
                 <div class="sb-panel sb-empty">This customer has no reservations yet.</div>
             @endforelse
+            @include('components.table-pagination', ['paginator' => $reservations, 'itemLabel' => 'reservations'])
         </div>
     </div>
 </x-app-layout>

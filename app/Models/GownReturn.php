@@ -42,4 +42,9 @@ class GownReturn extends Model
     {
         return $this->hasMany(Penalty::class);
     }
+
+    public function gownPurchases()
+    {
+        return $this->hasMany(GownPurchase::class);
+    }
 }

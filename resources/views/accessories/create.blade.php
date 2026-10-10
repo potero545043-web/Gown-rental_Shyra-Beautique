@@ -40,9 +40,8 @@
                     </label>
 
                     <label>Accessory image
-                        <input type="file" name="image" accept="image/png,image/jpeg,image/webp"
-                            onchange="const f=this.files[0],p=document.getElementById('accessory-preview'); if(f){p.src=URL.createObjectURL(f); p.hidden=false; p.style.display='block';}">
-                        <img id="accessory-preview" class="sb-image-preview" alt="Image preview" hidden style="display:none">
+                        <input type="file" name="image" accept="image/png,image/jpeg,image/webp">
+                        <img id="accessory-preview" class="sb-image-preview" alt="Image preview" hidden>
                         <small class="sb-field-hint">JPG, PNG or WEBP, up to 2 MB.</small>
                     </label>
 

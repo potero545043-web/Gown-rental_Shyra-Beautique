@@ -11,6 +11,7 @@ use App\Http\Controllers\Customer\DashboardController as CustomerDashboardContro
 use App\Http\Controllers\Customer\NotificationController as CustomerNotificationController;
 use App\Http\Controllers\NotificationController as StaffNotificationController;
 use App\Http\Controllers\ManagementController;
+use App\Http\Controllers\InventoryReportController;
 use App\Http\Controllers\ProfileController;
 
 
@@ -39,6 +40,7 @@ Route::middleware(['auth', 'role:owner'])
         Route::post('/notifications/{notification}/read', [StaffNotificationController::class, 'markRead'])->name('notifications.read');
 
         Route::get('/reservations', [ManagementController::class, 'reservations'])->name('reservations');
+        Route::get('/reservations/{reservation}', [ManagementController::class, 'reservationDetails'])->name('reservations.show');
         Route::post('/reservations', [ManagementController::class, 'storeEmployeeReservation'])->name('reservations.store');
         Route::patch('/reservations/{reservation}', [ManagementController::class, 'updateReservation'])->name('reservations.update');
         Route::get('/rentals', [ManagementController::class, 'rentals'])->name('rentals');
@@ -49,14 +51,29 @@ Route::middleware(['auth', 'role:owner'])
         Route::get('/maintenance', [ManagementController::class, 'maintenance'])->name('maintenance');
         Route::post('/maintenance', [ManagementController::class, 'createMaintenance'])->name('maintenance.store');
         Route::post('/maintenance/{maintenance}/complete', [ManagementController::class, 'completeMaintenance'])->name('maintenance.complete');
+
+        // Inventory reporting: damage log + customer gown purchases
+        Route::get('/damages', [InventoryReportController::class, 'damages'])->name('damages');
+        Route::post('/damages', [InventoryReportController::class, 'storeDamage'])->name('damages.store');
+        Route::patch('/damages/{damage}/final-cost', [InventoryReportController::class, 'updateDamageFinalCost'])->name('damages.final-cost');
+        Route::get('/damages/{damage}/photo', [InventoryReportController::class, 'damagePhoto'])->name('damages.photo');
+        Route::delete('/damages/{damage}', [InventoryReportController::class, 'destroyDamage'])->name('damages.destroy');
+        Route::get('/purchases', [InventoryReportController::class, 'purchases'])->name('purchases');
+        Route::post('/purchases', [InventoryReportController::class, 'storePurchase'])->name('purchases.store');
         Route::get('/customers', [ManagementController::class, 'customers'])->name('customers');
+        Route::patch('/customers/{customer}', [ManagementController::class, 'updateCustomer'])->name('customers.update');
         Route::get('/customers/{customer}', [ManagementController::class, 'customerDetails'])->name('customers.show');
         Route::get('/payments', [ManagementController::class, 'payments'])->name('payments');
         Route::post('/reservations/{reservation}/payments', [ManagementController::class, 'recordPayment'])->name('payments.store');
         Route::patch('/payments/{payment}', [ManagementController::class, 'verifyPayment'])->name('payments.update');
         Route::get('/catalog', [CustomerDashboardController::class, 'catalog'])->name('catalog');
         Route::get('/catalog/{gown}', [CustomerDashboardController::class, 'details'])->name('catalog.show');
+        Route::post('/catalog/{gown}/cart', [ManagementController::class, 'addToCart'])->name('cart.add');
+        Route::get('/cart', [ManagementController::class, 'cart'])->name('cart');
+        Route::delete('/cart/gowns/{gown}', [ManagementController::class, 'removeFromCart'])->name('cart.remove');
+        Route::delete('/cart', [ManagementController::class, 'clearCart'])->name('cart.clear');
         Route::get('/catalog/{gown}/reserve', [ManagementController::class, 'employeeReservationForm'])->name('catalog.reserve');
+        Route::get('/reserve', [ManagementController::class, 'employeeReservationForm'])->name('reserve');
         Route::get('/employees', [ManagementController::class, 'employees'])->name('employees');
         Route::get('/employees/create', [ManagementController::class, 'createEmployeeForm'])->name('employees.create');
         Route::get('/employees/{employee}', [ManagementController::class, 'employeeDetails'])->name('employees.show');
@@ -71,6 +88,7 @@ Route::middleware(['auth', 'role:owner'])
 
         Route::resource('categories', CategoryController::class);
         Route::resource('gowns', GownController::class)->except('destroy');
+        Route::get('/archive', [GownController::class, 'archiveIndex'])->name('archive');
         Route::post('/gowns/{gown}/archive', [GownController::class, 'archive'])->name('gowns.archive');
         Route::patch('/gowns/{gown}/restore', [GownController::class, 'restore'])->name('gowns.restore');
         Route::resource('accessories', AccessoryController::class);
@@ -97,6 +115,7 @@ Route::middleware(['auth', 'role:employee'])
 
         // Reservations (table + add reservation -> catalog)
         Route::get('/reservations', [ManagementController::class, 'reservations'])->name('reservations');
+        Route::get('/reservations/{reservation}', [ManagementController::class, 'reservationDetails'])->name('reservations.show');
         Route::post('/reservations', [ManagementController::class, 'storeEmployeeReservation'])->name('reservations.store');
         Route::patch('/reservations/{reservation}', [ManagementController::class, 'updateReservation'])->name('reservations.update');
 
@@ -112,10 +131,15 @@ Route::middleware(['auth', 'role:employee'])
         Route::post('/reservations/{reservation}/payments', [ManagementController::class, 'recordPayment'])->name('payments.store');
         Route::patch('/payments/{payment}', [ManagementController::class, 'verifyPayment'])->name('payments.update');
 
-        // Catalog (reserve for walk-in customer)
+        // Catalog (reserve for walk-in customer or bulk-add to the in-store cart)
         Route::get('/catalog', [CustomerDashboardController::class, 'catalog'])->name('catalog');
         Route::get('/catalog/{gown}', [CustomerDashboardController::class, 'details'])->name('catalog.show');
+        Route::post('/catalog/{gown}/cart', [ManagementController::class, 'addToCart'])->name('cart.add');
+        Route::get('/cart', [ManagementController::class, 'cart'])->name('cart');
+        Route::delete('/cart/gowns/{gown}', [ManagementController::class, 'removeFromCart'])->name('cart.remove');
+        Route::delete('/cart', [ManagementController::class, 'clearCart'])->name('cart.clear');
         Route::get('/catalog/{gown}/reserve', [ManagementController::class, 'employeeReservationForm'])->name('catalog.reserve');
+        Route::get('/reserve', [ManagementController::class, 'employeeReservationForm'])->name('reserve');
     });
 
 
@@ -137,9 +161,14 @@ Route::middleware(['auth', 'role:customer'])
 
         Route::get('/catalog', [CustomerDashboardController::class, 'catalog'])->name('catalog');
         Route::get('/gowns/{gown}', [CustomerDashboardController::class, 'details'])->name('gowns.show');
-        Route::get('/gowns/{gown}/reserve', [CustomerDashboardController::class, 'reserve'])->name('reserve');
+        Route::get('/gowns/{gown}/reserve', [CustomerDashboardController::class, 'reserveGown'])->name('reserve.gown');
         Route::get('/gowns/{gown}/availability', [CustomerDashboardController::class, 'checkAvailability'])->name('reserve.availability');
-        Route::post('/gowns/{gown}/reserve', [CustomerDashboardController::class, 'storeReservation'])->name('reserve.store');
+        Route::post('/gowns/{gown}/cart', [CustomerDashboardController::class, 'addToCart'])->name('cart.add');
+        Route::get('/cart', [CustomerDashboardController::class, 'cart'])->name('cart');
+        Route::delete('/cart/gowns/{gown}', [CustomerDashboardController::class, 'removeFromCart'])->name('cart.remove');
+        Route::delete('/cart', [CustomerDashboardController::class, 'clearCart'])->name('cart.clear');
+        Route::get('/reserve', [CustomerDashboardController::class, 'reserve'])->name('reserve');
+        Route::post('/reserve', [CustomerDashboardController::class, 'storeReservation'])->name('reserve.store');
         Route::get('/reservations', [CustomerDashboardController::class, 'reservations'])->name('reservations');
         Route::get('/reservations/{reservation}', [CustomerDashboardController::class, 'showReservation'])->name('reservations.show');
         Route::patch('/reservations/{reservation}/cancel', [CustomerDashboardController::class, 'cancelReservation'])->name('reservations.cancel');

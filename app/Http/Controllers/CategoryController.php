@@ -10,9 +10,12 @@ class CategoryController extends Controller
     /**
      * Display all categories.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $categories = Category::withCount('gowns')->latest()->get();
+        $perPage = in_array($request->integer('per_page', 12), [12, 24, 48], true)
+            ? $request->integer('per_page', 12)
+            : 12;
+        $categories = Category::withCount('gowns')->latest()->paginate($perPage)->withQueryString();
 
         return view('categories.index', compact('categories'));
     }
@@ -49,9 +52,14 @@ class CategoryController extends Controller
     /**
      * Display a specific category.
      */
-    public function show(Category $category)
+    public function show(Request $request, Category $category)
     {
-        return view('categories.show', compact('category'));
+        $perPage = in_array($request->integer('per_page', 12), [12, 24, 48], true)
+            ? $request->integer('per_page', 12)
+            : 12;
+        $gowns = $category->gowns()->latest()->paginate($perPage)->withQueryString();
+
+        return view('categories.show', compact('category', 'gowns'));
     }
 
     /**

@@ -42,6 +42,15 @@
             scroll-behavior: smooth;
         }
 
+        .sb-home-nav {
+            height: auto !important;
+            padding: 0 !important;
+        }
+
+        .sb-home-nav>div>div:first-child {
+            min-height: 78px;
+        }
+
 
         /* ================================
        BODY
@@ -248,6 +257,52 @@
             transform: translateY(-1px);
         }
 
+        /* Burger is a mobile-only control. This inline block is emitted after
+           Tailwind's stylesheet, so a bare .sb-home-menu-toggle rule would
+           override .lg:hidden and leak the burger onto the desktop nav. */
+        .sb-home-menu-toggle {
+            display: none;
+            place-items: center;
+            flex: 0 0 auto;
+            width: 42px;
+            height: 42px;
+            border: 1px solid #c9a961;
+            border-radius: 50%;
+            background: #fffaf1;
+            color: #5e1229;
+        }
+
+        @media (max-width: 1023.98px) {
+            .sb-home-menu-toggle {
+                display: grid;
+            }
+        }
+
+        .sb-home-menu-toggle svg {
+            width: 21px;
+            height: 21px;
+        }
+
+        .sb-home-mobile-menu {
+            padding: 8px 0 16px;
+            border-top: 1px solid #c9a961;
+        }
+
+        .sb-home-mobile-menu a {
+            display: block;
+            padding: 12px 8px;
+            color: #5e1229;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .sb-home-mobile-menu a:hover,
+        .sb-home-mobile-menu a:focus-visible {
+            border-radius: 8px;
+            background: #e3ce9e;
+        }
+
 
         /* ================================
        GENERAL INTERACTIVE TRANSITION
@@ -269,7 +324,8 @@
     <!-- NAVBAR -->
 
     <header
-        class="sb-home-nav fixed top-0 left-0 right-0 z-50 bg-[#F0E1BE]/95 backdrop-blur-md border-b border-[#C9A961]">
+        class="sb-home-nav fixed top-0 left-0 right-0 z-50 bg-[#F0E1BE]/95 backdrop-blur-md border-b border-[#C9A961]"
+        x-data="{ mobileMenuOpen: false }" @keydown.escape.window="mobileMenuOpen = false">
 
         <div class="max-w-7xl mx-auto px-6 lg:px-10">
 
@@ -295,7 +351,7 @@
 
                 <!-- NAV LINKS -->
 
-                <nav class="hidden lg:flex items-center gap-8">
+                <nav class="sb-home-desktop-nav hidden lg:flex items-center gap-8">
 
                     <a href="#home" class="text-sm font-medium text-[#5E1229] hover:text-[#9A7633] transition">
                         Home
@@ -319,6 +375,15 @@
 
                 </nav>
 
+                <button type="button" class="sb-home-menu-toggle lg:hidden" @click="mobileMenuOpen = !mobileMenuOpen"
+                    :aria-expanded="mobileMenuOpen.toString()" aria-controls="sb-home-mobile-menu"
+                    aria-label="Toggle site navigation">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="1.8" stroke-linecap="round">
+                        <path x-show="!mobileMenuOpen" d="M4 7h16M4 12h16M4 17h16" />
+                        <path x-show="mobileMenuOpen" d="m6 6 12 12M18 6 6 18" />
+                    </svg>
+                </button>
 
                 <!-- RIGHT SIDE -->
 
@@ -370,6 +435,16 @@
                 </div>
 
             </div>
+
+            <nav id="sb-home-mobile-menu" class="sb-home-mobile-menu lg:hidden" x-show="mobileMenuOpen" x-cloak
+                aria-label="Mobile navigation">
+                <a href="#home" @click="mobileMenuOpen = false">Home</a>
+                <a href="#collection" @click="mobileMenuOpen = false">Gowns</a>
+                <a href="#how-it-works" @click="mobileMenuOpen = false">How It Works</a>
+                <a href="#about" @click="mobileMenuOpen = false">About Us</a>
+                <a href="#contact" @click="mobileMenuOpen = false">Contact</a>
+                <a href="{{ route('login') }}" @click="mobileMenuOpen = false">Login</a>
+            </nav>
 
         </div>
 
@@ -637,228 +712,88 @@
 
                 <!-- GOWN CARDS -->
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7">
+                @if($featuredGowns->isNotEmpty())
 
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7">
 
-                    <!-- CARD 1 -->
+                        @foreach($featuredGowns as $gown)
 
-                    <article class="scroll-item gown-card bg-white rounded-2xl overflow-hidden card-shadow">
+                            <article class="scroll-item gown-card bg-white rounded-2xl overflow-hidden card-shadow">
 
-                        <div class="relative h-[360px] overflow-hidden bg-[#E0CB9C]">
+                                <div class="relative h-[360px] overflow-hidden bg-[#E0CB9C]">
 
-                            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwJM7S0DVfveufp0vEOGoQ19JSazLhHuSDybMWoS-P7Xs98bds71H_s7o&s=10"
-                                alt="Champagne Dream gown" class="gown-image w-full h-full object-cover">
+                                    <img src="{{ $gown->image_url }}" alt="{{ $gown->name }} gown"
+                                        class="gown-image w-full h-full object-cover" loading="lazy">
 
-                            <span
-                                class="absolute top-4 left-4 bg-white/90 text-[#5E1229] text-xs font-semibold px-3 py-1.5 rounded-full">
+                                    <span
+                                        class="absolute top-4 left-4 bg-white/90 text-[#5E1229] text-xs font-semibold px-3 py-1.5 rounded-full">
 
-                                Featured
+                                        {{ $gown->category->name ?? 'Featured' }}
 
-                            </span>
+                                    </span>
 
-                        </div>
+                                </div>
 
 
-                        <div class="p-5">
+                                <div class="p-5">
 
-                            <p class="text-xs uppercase tracking-wider text-[#7A6440]">
+                                    <p class="text-xs uppercase tracking-wider text-[#7A6440]">
 
-                                Formal Gown
+                                        {{ $gown->style ? ucfirst($gown->style) : 'Formal Gown' }}
 
-                            </p>
+                                        @if($gown->size)
+                                            · Size {{ $gown->size }}
+                                        @endif
 
-                            <h3 class="font-display text-2xl text-[#5E1229] mt-1">
+                                    </p>
 
-                                Champagne Dream
+                                    <h3 class="font-display text-2xl text-[#5E1229] mt-1">
 
-                            </h3>
+                                        {{ $gown->name }}
 
-                            <div class="flex items-center justify-between mt-5">
+                                    </h3>
 
-                                <span class="font-semibold text-[#5E1229]">
+                                    <div class="flex items-center justify-between mt-5">
 
-                                    ₱2,500
+                                        <span class="font-semibold text-[#5E1229]">
 
-                                </span>
+                                            ₱{{ number_format((float) $gown->rental_price, 0) }}
 
-                                <a href="{{ route('register') }}" class="sb-home-reserve-button">
+                                        </span>
 
-                                    Reserve Now
+                                        <a href="{{ route('register') }}" class="sb-home-reserve-button">
 
-                                </a>
+                                            Reserve Now
 
-                            </div>
+                                        </a>
 
-                        </div>
+                                    </div>
 
-                    </article>
+                                </div>
 
+                            </article>
 
+                        @endforeach
 
-                    <!-- CARD 2 -->
+                    </div>
 
-                    <article class="scroll-item gown-card bg-white rounded-2xl overflow-hidden card-shadow">
+                @else
 
-                        <div class="relative h-[360px] overflow-hidden bg-[#E0CB9C]">
+                    <div class="rounded-2xl border border-[#C9A961] bg-white/60 px-8 py-16 text-center">
 
-                            <img src="https://www.thewildflowershop.com/cdn/shop/files/Pamela_in_Red-13_620x.jpg?v=1742131736"
-                                alt="Scarlet Elegance gown" class="gown-image w-full h-full object-cover">
+                        <p class="font-display text-2xl text-[#5E1229]">Our collection is being refreshed</p>
 
-                            <span
-                                class="absolute top-4 left-4 bg-white/90 text-[#5E1229] text-xs font-semibold px-3 py-1.5 rounded-full">
+                        <p class="mt-3 text-[#6B5B45]">
+                            New gowns are on their way. Create an account and be the first to reserve one.
+                        </p>
 
-                                Popular
+                        <a href="{{ route('register') }}" class="sb-home-reserve-button mt-6">
+                            Create Account
+                        </a>
 
-                            </span>
+                    </div>
 
-                        </div>
-
-
-                        <div class="p-5">
-
-                            <p class="text-xs uppercase tracking-wider text-[#7A6440]">
-
-                                Evening Gown
-
-                            </p>
-
-                            <h3 class="font-display text-2xl text-[#5E1229] mt-1">
-
-                                Scarlet Elegance
-
-                            </h3>
-
-                            <div class="flex items-center justify-between mt-5">
-
-                                <span class="font-semibold text-[#5E1229]">
-
-                                    ₱2,800
-
-                                </span>
-
-                                <a href="{{ route('register') }}" class="sb-home-reserve-button">
-
-                                    Reserve Now
-
-                                </a>
-
-                            </div>
-
-                        </div>
-
-                    </article>
-
-
-
-                    <!-- CARD 3 -->
-
-                    <article class="scroll-item gown-card bg-white rounded-2xl overflow-hidden card-shadow">
-
-                        <div class="relative h-[360px] overflow-hidden bg-[#E0CB9C]">
-
-                            <img src="https://theortensia.com/cdn/shop/files/Copy_of_Copy_of_New_Ecom_1_6.png?v=1770473673&width=1920"
-                                alt="Rosé Bloom gown" class="gown-image w-full h-full object-cover">
-
-                            <span
-                                class="absolute top-4 left-4 bg-white/90 text-[#5E1229] text-xs font-semibold px-3 py-1.5 rounded-full">
-
-                                New
-
-                            </span>
-
-                        </div>
-
-
-                        <div class="p-5">
-
-                            <p class="text-xs uppercase tracking-wider text-[#7A6440]">
-
-                                Debut Gown
-
-                            </p>
-
-                            <h3 class="font-display text-2xl text-[#5E1229] mt-1">
-
-                                Rosé Bloom
-
-                            </h3>
-
-                            <div class="flex items-center justify-between mt-5">
-
-                                <span class="font-semibold text-[#5E1229]">
-
-                                    ₱2,600
-
-                                </span>
-
-                                <a href="{{ route('register') }}" class="sb-home-reserve-button">
-
-                                    Reserve Now
-
-                                </a>
-
-                            </div>
-
-                        </div>
-
-                    </article>
-
-
-
-                    <!-- CARD 4 -->
-
-                    <article class="scroll-item gown-card bg-white rounded-2xl overflow-hidden card-shadow">
-
-                        <div class="relative h-[360px] overflow-hidden bg-[#E0CB9C]">
-
-                            <img src="https://www.chicwish.com/media/catalog/product/cache/a87871bafb3bfd9c132042a6843aa84f/2/5/250821cc216.jpg"
-                                alt="Midnight Grace gown" class="gown-image w-full h-full object-cover">
-
-                            <span
-                                class="absolute top-4 left-4 bg-white/90 text-[#5E1229] text-xs font-semibold px-3 py-1.5 rounded-full">
-
-                                Elegant
-
-                            </span>
-
-                        </div>
-
-
-                        <div class="p-5">
-
-                            <p class="text-xs uppercase tracking-wider text-[#7A6440]">
-
-                                Formal Gown
-
-                            </p>
-
-                            <h3 class="font-display text-2xl text-[#5E1229] mt-1">
-
-                                Midnight Grace
-
-                            </h3>
-
-                            <div class="flex items-center justify-between mt-5">
-
-                                <span class="font-semibold text-[#5E1229]">
-
-                                    ₱2,700
-
-                                </span>
-
-                                <a href="{{ route('register') }}" class="sb-home-reserve-button">
-
-                                    Reserve Now
-
-                                </a>
-
-                            </div>
-
-                        </div>
-
-                    </article>
-
-                </div>
+                @endif
 
             </div>
 
@@ -1215,47 +1150,57 @@
 
     <script>
 
-        document.addEventListener('DOMContentLoaded', function () {
+        // Scroll reveal. Runs immediately rather than waiting on
+        // DOMContentLoaded: Vite injects its modules asynchronously, so the
+        // event can fire before this inline script's listener is attached
+        // (and the content would then stay hidden at opacity: 0 forever).
+        (function () {
 
             const elements = document.querySelectorAll(
                 '.scroll-reveal, .scroll-item'
             );
 
+            if (!elements.length) {
+                return;
+            }
+
+            // Anything without IntersectionObserver just shows the content.
+            if (!('IntersectionObserver' in window)) {
+                elements.forEach(el => el.classList.add('show'));
+                return;
+            }
 
             const observer = new IntersectionObserver(
-
                 function (entries) {
-
                     entries.forEach(function (entry) {
-
                         if (entry.isIntersecting) {
-
                             entry.target.classList.add('show');
-
                         } else {
-
                             entry.target.classList.remove('show');
-
                         }
-
                     });
-
                 },
-
                 {
                     threshold: 0.15
                 }
-
             );
 
-
             elements.forEach(function (element) {
-
                 observer.observe(element);
-
             });
 
-        });
+            // Safety net: whatever is still on screen after a moment is shown,
+            // so a missed observer callback can never leave sections invisible.
+            window.setTimeout(function () {
+                elements.forEach(function (element) {
+                    const rect = element.getBoundingClientRect();
+                    if (rect.top < window.innerHeight && rect.bottom > 0) {
+                        element.classList.add('show');
+                    }
+                });
+            }, 300);
+
+        })();
 
     </script>
 

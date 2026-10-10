@@ -42,11 +42,13 @@
                             </p>
                         </div>
 
-                        <button class="sb-inventory-primary sb-inventory-filter-add" type="button"
-                            onclick="document.getElementById('maintenance-create-dialog').showModal()">
-                            <span aria-hidden="true">＋</span>
-                            Log maintenance
-                        </button>
+                        <div class="sb-inventory-toolbar-actions">
+                            <button class="sb-inventory-primary sb-inventory-filter-add" type="button"
+                                onclick="document.getElementById('maintenance-create-dialog').showModal()">
+                                <span aria-hidden="true">＋</span>
+                                Log maintenance
+                            </button>
+                        </div>
 
                     </div>
 
@@ -195,17 +197,7 @@
 
 
                     {{-- PAGINATION --}}
-                    <div class="sb-pagination">
-                        <span class="sb-pagination-count">
-                            Showing
-                            {{ $maintenanceRecords->firstItem() ?? 0 }}–{{ $maintenanceRecords->lastItem() ?? 0 }}
-                            of {{ $maintenanceRecords->total() }}
-                        </span>
-
-                        @if($maintenanceRecords->hasPages())
-                            {{ $maintenanceRecords->links() }}
-                        @endif
-                    </div>
+                    @include('components.table-pagination', ['paginator' => $maintenanceRecords, 'itemLabel' => 'jobs'])
 
                 </div>
 

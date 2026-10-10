@@ -3,6 +3,7 @@
 use App\Models\User;
 
 test('login screen can be rendered', function () {
+    encryptPasswordFields([]);
     $response = $this->get('/login');
 
     $response->assertStatus(200);
@@ -11,22 +12,22 @@ test('login screen can be rendered', function () {
 test('users can authenticate using the login screen', function () {
     $user = User::factory()->create();
 
-    $response = $this->post('/login', [
+    $response = $this->post('/login', encryptPasswordFields([
         'email' => $user->email,
         'password' => 'password',
-    ]);
+    ]));
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect(route('customer.dashboard', absolute: false));
 });
 
 test('users can not authenticate with invalid password', function () {
     $user = User::factory()->create();
 
-    $this->post('/login', [
+    $this->post('/login', encryptPasswordFields([
         'email' => $user->email,
         'password' => 'wrong-password',
-    ]);
+    ]));
 
     $this->assertGuest();
 });

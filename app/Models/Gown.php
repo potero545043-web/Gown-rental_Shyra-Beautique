@@ -76,4 +76,9 @@ class Gown extends Model
     {
         return $this->hasMany(DamageReport::class);
     }
+
+    public function purchases()
+    {
+        return $this->hasMany(GownPurchase::class);
+    }
 }

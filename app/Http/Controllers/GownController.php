@@ -36,7 +36,10 @@ class GownController extends Controller
             $query->where('status', $request->string('status'));
         if ($request->filled('condition'))
             $query->where('condition', $request->string('condition'));
-        $gowns = $query->paginate(15)->withQueryString();
+        $perPage = in_array($request->integer('per_page', 12), [12, 24, 48], true)
+            ? $request->integer('per_page', 12)
+            : 12;
+        $gowns = $query->paginate($perPage)->withQueryString();
         $categories = Category::where('is_active', true)->orderBy('name')->get();
         $accessories = Accessory::where('status', 'available')->orderBy('name')->get();
         $inventoryStats = [
@@ -47,6 +50,31 @@ class GownController extends Controller
         ];
 
         return view('gowns.index', compact('gowns', 'categories', 'accessories', 'inventoryStats'));
+    }
+
+    /** Dedicated archive module: every archived gown, with restore actions. */
+    public function archiveIndex(Request $request)
+    {
+        $query = Gown::with('category')
+            ->whereNotNull('archived_at')
+            ->latest('archived_at');
+
+        if ($request->filled('q')) {
+            $term = $request->string('q');
+            $query->where(fn($builder) => $builder->where('name', 'like', "%$term%")
+                ->orWhere('gown_code', 'like', "%$term%")
+                ->orWhere('color', 'like', "%$term%"));
+        }
+        if ($request->filled('category'))
+            $query->where('category_id', $request->integer('category'));
+
+        $perPage = in_array($request->integer('per_page', 12), [12, 24, 48], true)
+            ? $request->integer('per_page', 12)
+            : 12;
+        $gowns = $query->paginate($perPage)->withQueryString();
+        $categories = Category::where('is_active', true)->orderBy('name')->get();
+
+        return view('gowns.archive', compact('gowns', 'categories'));
     }
 
     public function archive(Gown $gown)

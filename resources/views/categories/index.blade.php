@@ -24,7 +24,7 @@
 
 
             {{-- CATEGORIES PANEL --}}
-            <section class="sb-panel">
+            <section class="sb-panel sb-category-panel">
 
                 <div class="sb-inventory-content">
 
@@ -37,16 +37,18 @@
                             <h2>Categories</h2>
 
                             <p>
-                                {{ $categories->count() }}
-                                {{ \Illuminate\Support\Str::plural('category', $categories->count()) }}
+                                {{ $categories->total() }}
+                                {{ \Illuminate\Support\Str::plural('category', $categories->total()) }}
                             </p>
                         </div>
 
-                        <button class="sb-inventory-primary sb-inventory-filter-add" type="button"
-                            onclick="document.getElementById('category-create-dialog').showModal()">
-                            <span aria-hidden="true">＋</span>
-                            Add category
-                        </button>
+                        <div class="sb-inventory-toolbar-actions">
+                            <button class="sb-inventory-primary sb-inventory-filter-add" type="button"
+                                onclick="document.getElementById('category-create-dialog').showModal()">
+                                <span aria-hidden="true">＋</span>
+                                Add category
+                            </button>
+                        </div>
 
                     </div>
 
@@ -72,22 +74,13 @@
 
                                     <tr>
 
-                                        {{-- CATEGORY (image + name) --}}
                                         <td data-label="Category">
-
                                             <div class="sb-inventory-name">
-
-                                                <div class="sb-inventory-thumb">
-                                                    <span aria-hidden="true">⌑</span>
-                                                </div>
-
                                                 <span>
                                                     <b>{{ $category->name }}</b>
                                                     <small>Collection category</small>
                                                 </span>
-
                                             </div>
-
                                         </td>
 
 
@@ -160,6 +153,8 @@
                         </table>
 
                     </div>
+
+                    @include('components.table-pagination', ['paginator' => $categories, 'itemLabel' => 'categories'])
 
                 </div>
 

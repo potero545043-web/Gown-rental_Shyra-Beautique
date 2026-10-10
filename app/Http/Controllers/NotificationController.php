@@ -10,9 +10,11 @@ class NotificationController extends Controller
     public function index(): View
     {
         $role = request()->user()->role;
+        $pageSize = request()->integer('per_page', 12);
+        $pageSize = in_array($pageSize, [12, 24, 48], true) ? $pageSize : 12;
 
         return view('notifications.index', [
-            'notifications' => request()->user()->notifications()->latest()->paginate(20),
+            'notifications' => request()->user()->notifications()->latest()->paginate($pageSize)->withQueryString(),
             'role' => $role,
             'routePrefix' => $role . '.notifications',
         ]);
